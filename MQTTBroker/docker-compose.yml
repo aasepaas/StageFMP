@@ -1,0 +1,37 @@
+services:
+  emqx:
+    image: emqx/emqx:latest
+    container_name: emqx_container
+    ports:
+      - "8883:8883"   # MQTT over TLS/SSL Port (mTLS)
+      - "18083:18083" # EMQX Dashboard Port
+    volumes:
+      - ./docker_vol/emqx_data:/opt/emqx/data
+      - ./docker_vol/emqx_log:/opt/emqx/log
+      - ./emqx_setup/certs:/opt/emqx/etc/certs:ro
+    environment:
+      - EMQX_NAME=emqx
+      - EMQX_HOST=0.0.0.0
+      # Enable SSL/TLS listeners
+      - EMQX_LISTENERS__SSL__DEFAULT__BIND=8883
+      - EMQX_LISTENERS__SSL__DEFAULT__SSL_OPTIONS__CACERTFILE=/opt/emqx/etc/certs/ca_chain.pem
+      - EMQX_LISTENERS__SSL__DEFAULT__SSL_OPTIONS__CERTFILE=/opt/emqx/etc/certs/MQTTserver_chain.pem
+      - EMQX_LISTENERS__SSL__DEFAULT__SSL_OPTIONS__KEYFILE=/opt/emqx/etc/certs/MQTT_key.pem
+      - EMQX_LISTENERS__SSL__DEFAULT__SSL_OPTIONS__VERIFY=verify_peer
+      - EMQX_LISTENERS__SSL__DEFAULT__SSL_OPTIONS__FAIL_IF_NO_PEER_CERT=true
+      # Disable WSS listener to avoid certificate errors
+      - EMQX_LISTENERS__WSS__DEFAULT__ENABLE=false
+      #Disable WS listener to enforce secure connections
+      - EMQX_LISTENERS__WS__DEFAULT__ENABLE=false
+      #Disable MQTT listener to enforce secure connections
+      - EMQX_LISTENERS__TCP__DEFAULT__ENABLE=false
+      # Dashboard configuration
+      - EMQX_DASHBOARD__DEFAULT_USERNAME=admin
+      - EMQX_DASHBOARD__DEFAULT_PASSWORD=public
+    restart: unless-stopped
+    networks:
+      - emqx-net
+
+networks:
+  emqx-net:
+    driver: bridge

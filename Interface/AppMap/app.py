@@ -1,6 +1,7 @@
 from customtkinter.windows.widgets import appearance_mode
 import customtkinter
-from AppMap.AppWidgets.AppFrame import AppFrame
+
+from .AppWidgets import *
 #from . import AppFrame
 #from tkinter.tix import COLUMN
 
@@ -33,20 +34,28 @@ class app(customtkinter.CTk):
         self.maxsize(MAXWIDTH, MAXHEIGHT)
 
         self.grid_columnconfigure(0, weight=1)
-        self.grid_rowconfigure(1, weight=1)
-        self.grid_rowconfigure(0, weight=1)
+        self.grid_columnconfigure(1, weight=2)
 
-        ##variabelen die gebruikt worden door het doc heen
-        self.button = customtkinter.CTkButton(self, text="my button", command=self.button_callback)
-        self.button.grid(row=0, column=0, padx=10, pady=10, sticky="ew")
+        self.grid_rowconfigure(0, weight=1)
+        self.grid_rowconfigure(1, weight=4)
+        self.grid_rowconfigure(2, weight=1)
+
+        # ##variabelen die gebruikt worden door het doc heen
+        # self.button = customtkinter.CTkButton(self, text="my button", command=self.button_callback)
+        # self.button.grid(row=0, column=0,columnspan=2, padx=10, pady=10, sticky="ew")
         self.var = customtkinter.BooleanVar()
         
         
-        self.checkboxFrame1 = AppFrame(self, values=["box1", "box3", "box4"], masterCallbackFunction = self.checkbox_callback)
-        self.checkboxFrame2 = AppFrame(self, values=["box1", "box3", "box4"], masterCallbackFunction = self.checkbox_callback)
+        # self.checkboxFrame1 = AppFrame(self, values=["box1", "box3", "box4"], masterCallbackFunction = self.checkbox_callback)
+        # self.checkboxFrame2 = AppFrame(self, values=["box1", "box3", "box4"], masterCallbackFunction = self.checkbox_callback)
 
-        self.checkboxFrame1.grid(row=0, column=0, padx=10, pady=(0, 10), sticky="nsw")
-        self.checkboxFrame2.grid(row=1, column=0, padx=10, pady=(0, 10), sticky="wnes")
+        # self.checkboxFrame1.grid(row=1, column=0, padx=10, pady=(0, 10), sticky="nsew")
+        # self.checkboxFrame2.grid(row=2, column=0, padx=10, pady=(0, 10), sticky="wnes")
+        self.mapViewer = AppFrameMap(self)
+        self.mapViewer.grid(row=0, column=1, rowspan=3, padx=10, pady=(0,10), sticky="nswe")
+        self.robotViewer = AppFrameRobots(self)
+        self.robotViewer.grid(row=0, column=0, rowspan=3, padx=(10,0), pady=(0,10), sticky="nswe")
+
 
 
 
@@ -60,3 +69,6 @@ class app(customtkinter.CTk):
 
     def startGUI(self):
         self.mainloop()
+
+    def handleMessages():
+        pass

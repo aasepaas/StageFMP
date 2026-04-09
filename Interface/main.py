@@ -24,15 +24,13 @@ if __name__ == "__main__":
 
     app = app()
 
-    MQTTClient1 = MQTTClient("MQTTserver", 8883, "GUI", ca_certs, certfile, keyfile, on_message_handler=on_message)
+    MQTTClient1 = MQTTClient("MQTTserver", 8883, "GUI", ca_certs, certfile, keyfile, on_message_handler=app.MessageHandler)
     MQTTClient1.connectToBroker()
 
 
     MQTTClient1.listen_for_messages()
     sleep(0.1)
-    MQTTClient1.subscribe_to_topic("Robots/")
+    MQTTClient1.subscribe_to_topic("Robots/#")
 
 
-    while True:
-        pas=1+1
-    #app.startGUI()
+    app.startGUI()

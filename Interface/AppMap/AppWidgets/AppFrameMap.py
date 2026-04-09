@@ -112,7 +112,7 @@ class AppFrameMap(customtkinter.CTkFrame):
         meters_per_pixel = (156543.03 * math.cos(math.radians(lat))) / (2 ** zoom)
         return pixels * meters_per_pixel
 
-    def AddMarker(self, coords, markerText="new mark"):
+    def AddMarker(self, coords, direction, markerText="new mark"):
         print("adding new marker: ", coords)
         newMarker = self.map_widget.set_marker(coords[0], coords[1], text=markerText)
 

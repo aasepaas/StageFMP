@@ -70,5 +70,19 @@ class app(customtkinter.CTk):
     def startGUI(self):
         self.mainloop()
 
-    def handleMessages():
-        pass
+    def makeNewMarker(self, markerToBePlaced):
+        print("makeNewMarker van app")
+        coords = [markerToBePlaced[1], markerToBePlaced[2]]
+        name = markerToBePlaced[0]
+        direction = markerToBePlaced[3]
+        self.mapViewer.AddMarker(coords=coords, direction=direction, markerText=name)
+
+    def MessageHandler(self, client, userdata, msg):
+        decodedMessage = msg.payload.decode()
+        topic = msg.topic
+        print(f"Bericht ontvangen op '{topic}': {decodedMessage}")
+        markterToBePlaced = self.robotViewer.parseMessage(decodedMessage=decodedMessage,topic=topic)
+        print("marker to be placed if: " f"{markterToBePlaced}")
+        if markterToBePlaced:
+            print("marker to be placed is goed ")
+            self.makeNewMarker(markterToBePlaced)

@@ -1,10 +1,19 @@
+from os import DirEntry
+from pickle import LONG, TRUE
 import customtkinter
 from AppMap.AppWidgets.AppScrolFrameRobots import AppScrolFrameRobots
+from AppMap.AppWidgets.Robot import Robot
+
 
 
 class AppFrameRobots(customtkinter.CTkFrame):
     def __init__(self, master):
         super().__init__(master)
+
+        ###prededfined message splitters
+        self.topicSplit = '/'
+        self.msgSplit = ','
+        self.directionList = ["north", "east", "west", "south", "northeast", "northwest", "souteast", "southwest"]
 
         ###make the column grids for which the widgets will sit in
         self.grid_columnconfigure(0, weight=1)
@@ -25,6 +34,82 @@ class AppFrameRobots(customtkinter.CTkFrame):
 
         self.scrolFrame = AppScrolFrameRobots(self)
         self.scrolFrame.grid(row=1, column=0,sticky="nswe", padx=(8,8), pady=(5,5))
+
+        ### dict with name, Robot object
+        self.robotsDict = {}
+
+    def parseMessage(self, decodedMessage, topic):
+        splitTopic = topic.split(self.topicSplit)
+        markerToBePlaced = None
+        ###make a new robot if its not in the current list
+        if not(splitTopic[1] in self.robotsDict):
+            self.addRobot(splitTopic[1])
+
+        markerToBePlaced =self.updateRobotValue(name= splitTopic[1], valueField=splitTopic[2], value=decodedMessage)
+        print("returingning after parse message")
+        return markerToBePlaced
+        
+
+    def addRobot(self, robotName):
+        self.robotsDict[robotName] = Robot(robotName)
+        self.scrolFrame.AddNewRobotToFrame(robotName=robotName)
+
+                 
+    def deleteRobot(self, robotName):
+        pass
+        
+    
+    def updateRobotValue(self, name, valueField, value):
+        newMarker = []
+        ### robot positions need to be checked and if valid changed 
+        if (valueField == "Position"):
+            print("In valuefield position of updaterobotvalue")
+            ###check if the positions message is valid
+            checkedPositions = self.PositionCheck(value)
+            print("checkedpositions is : " + f"{checkedPositions}")
+            if checkedPositions:
+                ###check if new positions are the same as old positions, if not set new values
+                if not(checkedPositions == self.robotsDict[name].GetCurrentPosition()):
+                    self.robotsDict[name].SetCurrentPosition(checkedPositions)
+                    print("returning after updatedrobot position" + f"{checkedPositions}")
+                    ###return that a new marker needs to be placed
+                    newMarker = [name, checkedPositions[0], checkedPositions[1], checkedPositions[2] ]
+                    return newMarker
+        ###update robot status 
+        elif (valueField == "Status"):
+            self.robotsDict[name].SetStatus(value)
+        
+        return newMarker
+
+    def PositionCheck(self, position):
+        latAndLongDirection = position.split(self.msgSplit)
+        print(f"{latAndLongDirection}" + f"{len(latAndLongDirection)}")
+        ### latitude, longitude and direction of NESW 
+        if len(latAndLongDirection) == 3:
+
+            ###check the lat, long and direction if they are valid 
+            latitude = self.IsFLoat(latAndLongDirection[0])
+            longitude = self.IsFLoat(latAndLongDirection[1])
+            direction = self.IsDirection(latAndLongDirection[2])
+            print(f"{latitude}" + f"{longitude}" + f"{direction}")
+            ### return the lat, long and dir if valid
+            if latitude and longitude and direction:
+                print("position check valid")
+                return [latitude, longitude, direction] 
+        return False
+
+    def IsFLoat(self, value):
+        try:
+            return float(value)
+        except ValueError:
+            return False
+
+    def IsDirection(self, direction):
+        if(direction in self.directionList):
+            return direction
+        return False
+
+
 
 
 

@@ -13,7 +13,6 @@ class AppFrameRobots(customtkinter.CTkFrame):
         ###prededfined message splitters
         self.topicSplit = '/'
         self.msgSplit = ','
-        self.directionList = ["north", "east", "west", "south", "northeast", "northwest", "souteast", "southwest"]
 
         ###make the column grids for which the widgets will sit in
         self.grid_columnconfigure(0, weight=1)
@@ -53,6 +52,7 @@ class AppFrameRobots(customtkinter.CTkFrame):
     def addRobot(self, robotName):
         self.robotsDict[robotName] = Robot(robotName)
         self.scrolFrame.AddNewRobotToFrame(robotName=robotName)
+        self.scrolFrame.UpdateRobotFrame(robotName, "status","online")
 
                  
     def deleteRobot(self, robotName):
@@ -63,21 +63,19 @@ class AppFrameRobots(customtkinter.CTkFrame):
         newMarker = []
         ### robot positions need to be checked and if valid changed 
         if (valueField == "Position"):
-            print("In valuefield position of updaterobotvalue")
             ###check if the positions message is valid
             checkedPositions = self.PositionCheck(value)
-            print("checkedpositions is : " + f"{checkedPositions}")
             if checkedPositions:
                 ###check if new positions are the same as old positions, if not set new values
                 if not(checkedPositions == self.robotsDict[name].GetCurrentPosition()):
                     self.robotsDict[name].SetCurrentPosition(checkedPositions)
-                    print("returning after updatedrobot position" + f"{checkedPositions}")
                     ###return that a new marker needs to be placed
                     newMarker = [name, checkedPositions[0], checkedPositions[1], checkedPositions[2] ]
                     return newMarker
         ###update robot status 
-        elif (valueField == "Status"):
-            self.robotsDict[name].SetStatus(value)
+        elif (valueField == "status"):
+            self.ParseStatusMessage(name, value)
+           
         
         return newMarker
 
@@ -90,7 +88,7 @@ class AppFrameRobots(customtkinter.CTkFrame):
             ###check the lat, long and direction if they are valid 
             latitude = self.IsFLoat(latAndLongDirection[0])
             longitude = self.IsFLoat(latAndLongDirection[1])
-            direction = self.IsDirection(latAndLongDirection[2])
+            direction = self.IsDirection(self.IsFLoat(latAndLongDirection[2]))
             print(f"{latitude}" + f"{longitude}" + f"{direction}")
             ### return the lat, long and dir if valid
             if latitude and longitude and direction:
@@ -105,10 +103,21 @@ class AppFrameRobots(customtkinter.CTkFrame):
             return False
 
     def IsDirection(self, direction):
-        if(direction in self.directionList):
+        if(direction >= 0 and direction <=360):
             return direction
         return False
 
+    def ParseStatusMessage(self, name, value):
+        self.robotsDict[name].SetStatus(value)
+        if value == "error":
+            self.scrolFrame.UpdateRobotFrame(name, "status",value)
+            return "error"
+        elif value == "Off":
+            self.scrolFrame.UpdateRobotFrame(name, "status",value)
+            return "offline"
+        elif value == "done":
+            self.scrolFrame.UpdateRobotFrame(name, "status",value)
+            return "done"
 
 
 

@@ -1,4 +1,4 @@
-from encodings import mac_turkish
+﻿from encodings import mac_turkish
 from tkinter import W
 import customtkinter
 from tkintermapview import TkinterMapView
@@ -24,7 +24,7 @@ class AppFrameMap(customtkinter.CTkFrame):
 
         # Map widget
         self.map_widget = TkinterMapView(self, corner_radius=5, database_path="map_tiles.db")
-        self.map_widget.grid(row=1, column=0, columnspan=2, sticky="nswe", padx=(10, 10), pady=(0, 0))
+        self.map_widget.grid(row=1, column=0, columnspan=3, sticky="nswe", padx=(10, 10), pady=(0, 0))
 
         # Label
         self.label = customtkinter.CTkLabel(
@@ -74,6 +74,15 @@ class AppFrameMap(customtkinter.CTkFrame):
             command=self.AddMarker,
             pass_coords=True
         )
+        ### calculate positions button and testing switch button that goes to the correct function 
+        self.calculatePositionsButton = customtkinter.CTkButton(self, text="Bereken overige posities", command=self.CalculatePositions,
+                                                                border_color="black", border_width=2)
+        self.calculatePositionsButton.grid(row=2, column=1, padx=10, pady=10, sticky="nw")
+
+        self.testPositionModeVar = customtkinter.StringVar(value="on")
+        self.testPositionsSwitch = customtkinter.CTkSwitch(self, text="Test mode",variable=self.testPositionModeVar, onvalue="True", offvalue=None,
+                                                           border_color="black", border_width=2)
+        self.testPositionsSwitch.grid(row=2,column=2, padx=10, pady=10, sticky="nw")
 
         self.markersDict = {}
         self.marker_lines = {}
@@ -81,6 +90,11 @@ class AppFrameMap(customtkinter.CTkFrame):
         # Redraw lines on resize
         #self.map_widget.canvas.bind("<Configure>", self.DrawMarkerLines)
         self.addingMarker = False
+        self.map_widget.canvas.bind("<ButtonRelease-1>", self._on_pan_end, add="+")
+
+        self.map_widget.canvas.bind("<B1-Motion>", self._on_pan_end, add="+")
+        self.map_widget.canvas.bind("<Button-1>", self._on_pan_end, add="+")
+
 
     def change_map(self, new_map: str):
         if new_map == "Maps normal":
@@ -98,8 +112,11 @@ class AppFrameMap(customtkinter.CTkFrame):
 
     def _on_scroll(self, event):
         self.after(50, self._enforce_zoom)
-        self.DrawMarkerLines()
-        #self.after(50, self.DrawMarkerLines)
+        #self.DrawMarkerLines()
+        self.after(70, self.DrawMarkerLines)
+
+    def _on_pan_end(self, event):
+        self.after(70, self.DrawMarkerLines)
 
     def _enforce_zoom(self):
         if self.map_widget.zoom > self.MAX_ZOOM:
@@ -146,7 +163,7 @@ class AppFrameMap(customtkinter.CTkFrame):
         if self.addingMarker:
             return
         """Redraw all marker lines after zoom/pan"""
-        for marker, data in self.marker_lines.items():
+        for marker, data in list(self.marker_lines.items()):
             line_tag, direction = data
 
             if not marker.deleted:
@@ -166,7 +183,7 @@ class AppFrameMap(customtkinter.CTkFrame):
                     arrow = customtkinter.LAST
                 )
 
-        self.after(10, self.DrawMarkerLines)
+        #self.after(10, self.DrawMarkerLines)
 
     def AddMarker(self, coords, direction=None, markerText="new mark"):
         self.addingMarker = True
@@ -191,11 +208,66 @@ class AppFrameMap(customtkinter.CTkFrame):
         line_tag = markerText
         self.marker_lines[newMarker] = [line_tag, direction]
 
-        print(self.markersDict)
-        print(self.marker_lines)
+        #print(self.markersDict)
+        #print(self.marker_lines)
 
         #self.after(100, self.DrawMarkerLines)
         self.addingMarker = False
         self.DrawMarkerLines()
- 
 
+
+
+    def CalculatePositions(self):
+        ##check of er wel robots op de map zijn
+        print("calculateButtonPressed")
+        if not self.markersDict:
+            return
+        first_marker = list(self.markersDict.keys())[0]
+        lat, lon = first_marker.position
+
+        # pak richting (bearing) uit jouw dict
+        direction = self.marker_lines[first_marker][1]
+
+        if direction is None:
+            print("Geen richting ingesteld")
+            return
+
+        distance = 5  # meters (bijv. 100m vooruit)
+        normalizedDirection = self.NormalisePositionDegreeValues(direction, 1)
+
+        new_lat, new_lon = self.calculate_destination(lat, lon, normalizedDirection, distance)
+
+        # nieuwe marker toevoegen
+        self.AddMarker((new_lat, new_lon), direction, markerText="calculated")
+
+    def calculate_destination(self, lat, lon, bearing, distance):
+        R = 6371000  # straal van de aarde in meters
+
+        # omzetten naar radialen
+        lat1 = math.radians(lat)
+        lon1 = math.radians(lon)
+        theta = math.radians(bearing)
+        delta = distance / R
+
+        # formule toepassen
+        lat2 = math.asin(
+            math.sin(lat1) * math.cos(delta) +
+            math.cos(lat1) * math.sin(delta) * math.cos(theta)
+        )
+
+        lon2 = lon1 + math.atan2(
+            math.sin(theta) * math.sin(delta) * math.cos(lat1),
+            math.cos(delta) - math.sin(lat1) * math.sin(lat2)
+        )
+
+        # terug naar graden
+        lat2 = math.degrees(lat2)
+        lon2 = math.degrees(lon2)
+
+        return lat2, lon2
+
+    def NormalisePositionDegreeValues(self, degrees, situation):
+        ##situation 1 is north is pointing 0 degrees, from 270 degrees
+        if situation == 1 and degrees is not None:
+            degrees += 90
+            return degrees

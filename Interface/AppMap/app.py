@@ -1,6 +1,9 @@
 from customtkinter.windows.widgets import appearance_mode
 import customtkinter
 
+from virtualMQTTClient import VirtualMQTTclient
+
+
 from .AppWidgets import *
 #from . import AppFrame
 #from tkinter.tix import COLUMN
@@ -20,7 +23,7 @@ class app(customtkinter.CTk):
             cls._instance = super().__new__(cls)
         return cls._instance
     #init van de klasse tijdens aanmaken van object
-    def __init__(self):
+    def __init__(self, mqttClient):
         #check of er een attribuut is aangemaakt, zo niet maak een nieuw object aan, zo wel object bestaat al
         if "init" in self.__dict__:
             return
@@ -40,32 +43,16 @@ class app(customtkinter.CTk):
         self.grid_rowconfigure(1, weight=4)
         self.grid_rowconfigure(2, weight=1)
 
-        # ##variabelen die gebruikt worden door het doc heen
-        # self.button = customtkinter.CTkButton(self, text="my button", command=self.button_callback)
-        # self.button.grid(row=0, column=0,columnspan=2, padx=10, pady=10, sticky="ew")
         self.var = customtkinter.BooleanVar()
-        
-        
-        # self.checkboxFrame1 = AppFrame(self, values=["box1", "box3", "box4"], masterCallbackFunction = self.checkbox_callback)
-        # self.checkboxFrame2 = AppFrame(self, values=["box1", "box3", "box4"], masterCallbackFunction = self.checkbox_callback)
 
-        # self.checkboxFrame1.grid(row=1, column=0, padx=10, pady=(0, 10), sticky="nsew")
-        # self.checkboxFrame2.grid(row=2, column=0, padx=10, pady=(0, 10), sticky="wnes")
-        self.mapViewer = AppFrameMap(self)
+        self.MQTTClient = mqttClient
+
+        self.mapViewer = AppFrameMap(self, sendCallback=self.SendCoordinatesToRobots)
         self.mapViewer.grid(row=0, column=1, rowspan=3, padx=10, pady=(0,10), sticky="nswe")
         self.robotViewer = AppFrameRobots(self)
         self.robotViewer.grid(row=0, column=0, rowspan=3, padx=(10,0), pady=(0,10), sticky="nswe")
 
 
-
-
-        
-    def button_callback(self):
-        print("button pressed")
-
-    def checkbox_callback(self):
-        print(self.checkboxFrame1.get())
-        print(self.checkboxFrame2.get())
 
     def startGUI(self):
         self.mainloop()
@@ -86,3 +73,15 @@ class app(customtkinter.CTk):
         if markterToBePlaced:
             print("marker to be placed is goed ")
             self.makeNewMarker(markterToBePlaced)
+
+
+    def SendCoordinatesToRobots(self, coordsList):
+        msgField = "MoveToPosition"
+        robotNames = self.robotViewer.GetRobotNames()
+        robotsToSendTo = [key for key, val in coordsList.items() if val not in robotNames]
+        coords = [val for key, val in coordsList.items()]
+        if len(coords) >= len(robotsToSendTo):
+            if self.MQTTClient is not None:
+                for index in range(len(coords)):
+                    self.MQTTClient.send_message(f"Commands/{robotNames[index]}/{msgField}", f"{coords[index][0]},{coords[index][1]}")
+                    print(f"Robots/{robotNames[index]}/{msgField}", f"{coords[index][0]},{coords[index][1]}")

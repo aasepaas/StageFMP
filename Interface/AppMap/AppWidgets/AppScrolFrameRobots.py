@@ -1,4 +1,5 @@
 from tkinter import Canvas
+from turtle import update
 import customtkinter
 from PIL import Image, ImageDraw
 import os
@@ -27,17 +28,20 @@ class AppScrolFrameRobots(customtkinter.CTkScrollableFrame):
         img_label.image = ctk_image  # Referentie behouden
         
         control_frame.grid(row=self.currentRow, column=0, padx=(10, 10), pady=(10, 10))
-        img_label.grid(row=0, column=0, padx=(10, 10), pady=(10, 10))
+        img_label.grid(row=0, column=0, rowspan=2, padx=(10, 10), pady=(10, 10))
         
         text_label = customtkinter.CTkLabel(control_frame, text=robotName, font=("Arial", 18, "bold"))
         text_label.grid(row=0, column=1, padx=(10, 10), pady=(10, 10), sticky="n")
-        
+        status = "online"
+        statusText = customtkinter.CTkLabel(control_frame, text=f"status: {status}", font=("Arial", 14), fg_color="green")
+        statusText.grid(row=1, column=1, padx=(10, 10), pady=(10, 10), sticky="n")
         # Bewaar referenties
         self.robotFrames[robotName] = {
             'frame': control_frame,
             'img_label': img_label,
             'text_label': text_label,
-            'status': None
+            'status': None,
+            'status_label': statusText
         }
         
         self.currentRow += 1
@@ -113,6 +117,7 @@ class AppScrolFrameRobots(customtkinter.CTkScrollableFrame):
         # Als het een status update is
         if updateValueField.lower() == "status":
             robot_data['status'] = updateValue
+            robot_data['status_label'].configure(text=f"Status is: {updateValue} ", fg_color="red") if updateValue == "error" else robot_data['status_label'].configure(text=f"Status is: {updateValue} ", fg_color="green")
             
             # Maak nieuwe image met status indicator
             img_with_status = self._create_image_with_status(self.base_image, updateValue)

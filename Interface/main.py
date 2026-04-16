@@ -48,15 +48,17 @@ if __name__ == "__main__":
        print(f"Bericht ontvangen op '{topic}': {bericht}")
 
 
-    app = app()
 
-    MQTTClient1 = MQTTClient("MQTTserver", 8883, "GUI", ca_certs, certfile, keyfile, on_message_handler=app.MessageHandler)
+
+    MQTTClient1 = MQTTClient("MQTTserver", 8883, "GUI", ca_certs, certfile, keyfile)
+    app = app(MQTTClient1)
+
+    MQTTClient1.SetMessageHandler(app.MessageHandler)
     MQTTClient1.connectToBroker()
-
-
     MQTTClient1.listen_for_messages()
     sleep(0.1)
-    MQTTClient1.subscribe_to_topic("Robots/#")
+    MQTTClient1.subscribe_to_topic("Robots/#", qos=1)
+
 
 
     app.startGUI()

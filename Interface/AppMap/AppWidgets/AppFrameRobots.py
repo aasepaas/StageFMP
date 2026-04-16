@@ -1,5 +1,6 @@
 from os import DirEntry
 from pickle import LONG, TRUE
+from PIL.Image import item
 import customtkinter
 from AppMap.AppWidgets.AppScrolFrameRobots import AppScrolFrameRobots
 from AppMap.AppWidgets.Robot import Robot
@@ -9,11 +10,12 @@ from AppMap.AppWidgets.Robot import Robot
 class AppFrameRobots(customtkinter.CTkFrame):
     def __init__(self, master):
         super().__init__(master)
-
+        self.app = master
         ###prededfined message splitters
         self.topicSplit = '/'
         self.msgSplit = ','
 
+        
         ###make the column grids for which the widgets will sit in
         self.grid_columnconfigure(0, weight=1)
         self.grid_columnconfigure(1, weight=1)
@@ -118,6 +120,11 @@ class AppFrameRobots(customtkinter.CTkFrame):
         elif value == "done":
             self.scrolFrame.UpdateRobotFrame(name, "status",value)
             return "done"
+
+    def GetRobotNames(self):
+        robotNames = [key for key, val in self.robotsDict.items()]
+        print(robotNames)
+        return robotNames 
 
 
 

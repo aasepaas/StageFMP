@@ -43,6 +43,7 @@ class MQTTClient(VirtualMQTTclient):
         self.logger = customLogger()
         print(self.logger.getWaarde())
 
+
         self.logger.prPurple("Nieuwe object aangemaakt")
 
         
@@ -81,10 +82,16 @@ class MQTTClient(VirtualMQTTclient):
         pass
 
 
-    def subscribe_to_topic(self, topic):
-        """Subscribes the client to a specified topic."""
-        self.MQTTClientLib.subscribe(topic)
-        print(f"Subscriber client '{self.client_id}' is now subscribed to topic '{topic}'")
+    def subscribe_to_topic(self, topic, qos=1):
+        """Subscribes the client to a specified topic with QoS."""
+        result = self.MQTTClientLib.subscribe(topic, qos=qos)
+
+        status = result[0]
+
+        if status == 0:
+            print(f"Subscribed to '{topic}' with QoS {qos}")
+        else:
+            print(f"Failed to subscribe to '{topic}'")
 
     def _on_message_callback(self, MQTTClientLib, userdata, msg):
         """The default callback for receiving messages."""
@@ -106,7 +113,16 @@ class MQTTClient(VirtualMQTTclient):
     def connectionStatus(self):
         return self.connected
 
-    def send_message(self, topic, payload):
-        """Publishes a message to a given topic."""
-        self.MQTTClientLib.publish(topic, payload)
-        print(f"Publisher client '{self.client_id}' sent message to topic '{topic}': {payload}")
+    def send_message(self, topic, payload, qos=1, retain=False):
+        """Publishes a message to a given topic with QoS support."""
+        result = self.MQTTClientLib.publish(topic, payload, qos=qos, retain=retain)
+
+        status = result[0]
+
+        if status == 0:
+            print(f"Message sent to topic '{topic}' with QoS {qos}: {payload}")
+        else:
+            print(f"Failed to send message to topic '{topic}'")
+
+    def SetMessageHandler(self,on_message_handler):
+        self.MQTTClientLib.on_message = on_message_handler

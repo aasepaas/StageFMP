@@ -1,5 +1,6 @@
 ﻿from encodings import mac_turkish
 from tkinter import W
+from tkinter.font import nametofont
 import customtkinter
 from tkintermapview import TkinterMapView
 import math
@@ -10,9 +11,10 @@ ARROWLENGTH = 50
 
 
 class AppFrameMap(customtkinter.CTkFrame):
-    def __init__(self, master):
+    def __init__(self, master, sendCallback):
         super().__init__(master)
 
+        self.sendMessageCallback = sendCallback
         # Make column grids
         self.grid_columnconfigure(0, weight=1)
         self.grid_columnconfigure(1, weight=1)
@@ -75,14 +77,26 @@ class AppFrameMap(customtkinter.CTkFrame):
             pass_coords=True
         )
         ### calculate positions button and testing switch button that goes to the correct function 
-        self.calculatePositionsButton = customtkinter.CTkButton(self, text="Bereken overige posities", command=self.CalculatePositions,
+        self.controlFramePositionButtons = customtkinter.CTkFrame(self)
+        self.controlFramePositionButtons.grid(row=2, column=1, sticky="nw", padx=10, pady=10)
+
+        self.calculatePositionsButton = customtkinter.CTkButton(self.controlFramePositionButtons, text="Bereken overige posities", command=self.CalculatePositions,
                                                                 border_color="black", border_width=2)
-        self.calculatePositionsButton.grid(row=2, column=1, padx=10, pady=10, sticky="nw")
+        self.calculatePositionsButton.grid(row=0, column=0, padx=10, pady=10, sticky="nw")
 
         self.testPositionModeVar = customtkinter.StringVar(value="on")
         self.testPositionsSwitch = customtkinter.CTkSwitch(self, text="Test mode",variable=self.testPositionModeVar, onvalue="True", offvalue=None,
                                                            border_color="black", border_width=2)
         self.testPositionsSwitch.grid(row=2,column=2, padx=10, pady=10, sticky="nw")
+
+        self.calculatePositionsButton = customtkinter.CTkButton(self.controlFramePositionButtons, text="Verwijder berekende coördinaten", command=self.DeletePositions,
+                                                                border_color="black", border_width=2, fg_color="red")
+        self.calculatePositionsButton.grid(row=1, column=0, padx=10, pady=10, sticky="nw")
+
+        
+        self.calculatePositionsButton = customtkinter.CTkButton(self.controlFramePositionButtons, text="Stuur posities naar robots", command=self.SendMessagesToRobots,
+                                                                border_color="black", border_width=2, fg_color="green")
+        self.calculatePositionsButton.grid(row=2, column=0, padx=10, pady=10, sticky="nw")
 
         self.markersDict = {}
         self.marker_lines = {}
@@ -187,35 +201,20 @@ class AppFrameMap(customtkinter.CTkFrame):
 
     def AddMarker(self, coords, direction=None, markerText="new mark"):
         self.addingMarker = True
+
         print("adding new marker:", coords)
-        possibleKeyMarker = [key for key, val in self.markersDict.items() if val == markerText]
-        possibleKeyLineMarker = [key for key, val in self.marker_lines.items() if val[0] == markerText]
-        #print("possiblelinemarker: ", possibleKeyLineMarker)
-        if possibleKeyMarker and possibleKeyLineMarker:
-            print("possible key verwijdering")
-            del self.markersDict[possibleKeyMarker[0]]
-            del self.marker_lines[possibleKeyLineMarker[0]]
-            possibleKeyMarker[0].delete()
-
-
+        self.DeletePositions(markerText)
 
         newMarker = self.map_widget.set_marker(coords[0], coords[1], text=markerText)
         self.markersDict[newMarker] = markerText
-        
 
         self.map_widget.update_idletasks()
 
         line_tag = markerText
         self.marker_lines[newMarker] = [line_tag, direction]
 
-        #print(self.markersDict)
-        #print(self.marker_lines)
-
-        #self.after(100, self.DrawMarkerLines)
         self.addingMarker = False
         self.DrawMarkerLines()
-
-
 
     def CalculatePositions(self):
         ##check of er wel robots op de map zijn
@@ -271,3 +270,27 @@ class AppFrameMap(customtkinter.CTkFrame):
         if situation == 1 and degrees is not None:
             degrees += 90
             return degrees
+    
+    def DeletePositions(self, nameToDelete="calculated"):
+        markersToDelete = [key for key, val in self.markersDict.items() if nameToDelete in val]
+        markerLinesToDelete = [key for key, val in self.marker_lines.items() if nameToDelete in val]
+
+        for key in markersToDelete:
+            del self.markersDict[key]
+            key.delete()
+        for key in markerLinesToDelete:
+            del self.marker_lines[key]
+
+
+    def SendMessagesToRobots(self, robotName=None, msgField=None, msg=None):
+        coordsDict = {}
+        for marker, name in self.markersDict.items():
+            if "calc" in name:
+                coords = marker.position
+                print("print coords dit zijn: ", coords)
+                coordsDict[name]= coords
+
+        print("coordsdict = ", coordsDict)
+        self.sendMessageCallback(coordsDict)
+
+

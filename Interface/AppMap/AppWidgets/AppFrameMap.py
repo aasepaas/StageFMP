@@ -64,7 +64,7 @@ class AppFrameMap(customtkinter.CTkFrame):
             "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
             max_zoom=21
         )
-        self.map_widget.set_position(52.0116, 4.3571)
+        self.map_widget.set_position(52.0172355, 4.3712940)
         self.map_option_menu.set("Maps satellite")
 
         self.MAX_ZOOM = 21
@@ -131,6 +131,7 @@ class AppFrameMap(customtkinter.CTkFrame):
 
     def _on_pan_end(self, event):
         self.after(70, self.DrawMarkerLines)
+        self.map_widget.set_zoom(19)
 
     def _enforce_zoom(self):
         if self.map_widget.zoom > self.MAX_ZOOM:

@@ -75,7 +75,7 @@ class AppFrameRobots(customtkinter.CTkFrame):
                     newMarker = [name, checkedPositions[0], checkedPositions[1], checkedPositions[2] ]
                     return newMarker
         ###update robot status 
-        elif (valueField == "status"):
+        elif (valueField == "Status"):
             self.ParseStatusMessage(name, value)
            
         
@@ -114,12 +114,18 @@ class AppFrameRobots(customtkinter.CTkFrame):
         if value == "error":
             self.scrolFrame.UpdateRobotFrame(name, "status",value)
             return "error"
-        elif value == "Off":
+        elif value == "offline":
             self.scrolFrame.UpdateRobotFrame(name, "status",value)
             return "offline"
         elif value == "done":
             self.scrolFrame.UpdateRobotFrame(name, "status",value)
             return "done"
+        elif value == "online":
+            self.scrolFrame.UpdateRobotFrame(name, "status",value)
+            return "online"
+        elif value == "driving":
+            self.scrolFrame.UpdateRobotFrame(name, "status",value)
+            return "driving"
 
     def GetRobotNames(self):
         robotNames = [key for key, val in self.robotsDict.items()]

@@ -1,3 +1,4 @@
+import copy
 from customtkinter.windows.widgets import appearance_mode
 import customtkinter
 
@@ -75,13 +76,13 @@ class app(customtkinter.CTk):
             self.makeNewMarker(markterToBePlaced)
 
 
-    def SendCoordinatesToRobots(self, coordsList):
+    def SendCoordinatesToRobots(self, coordsDict):
         msgField = "MoveToPosition"
         robotNames = self.robotViewer.GetRobotNames()
-        robotsToSendTo = [key for key, val in coordsList.items() if val not in robotNames]
-        coords = [val for key, val in coordsList.items()]
-        if len(coords) >= len(robotsToSendTo):
-            if self.MQTTClient is not None:
-                for index in range(len(coords)):
-                    self.MQTTClient.send_message(f"Commands/{robotNames[index]}/{msgField}", f"{coords[index][0]},{coords[index][1]}")
-                    print(f"Robots/{robotNames[index]}/{msgField}", f"{coords[index][0]},{coords[index][1]}")
+        robotsToSendTo = [key for key in robotNames if key not in coordsDict]
+        coords = [val for key, val in coordsDict.items() if val != None]
+
+        if self.MQTTClient is not None:
+            for index in range(len(coords)):
+                self.MQTTClient.send_message(f"Commands/{robotsToSendTo[index]}/{msgField}", f"{coords[index][0]},{coords[index][1]}")
+                print(f"Commands/{robotsToSendTo[index]}/{msgField}", f"{coords[index][0]},{coords[index][1]}")

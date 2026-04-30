@@ -3,6 +3,7 @@ from tkintermapview import TkinterMapView
 import math
 import threading
 import requests
+from geopy.geocoders import Nominatim
 
 ARROWLENGTH    = 50
 PDOK_WFS_URL   = "https://service.pdok.nl/rws/nationaal-wegenbestand-wegen/wfs/v1_0"
@@ -68,7 +69,7 @@ class AppFrameMap(customtkinter.CTkFrame):
 
         customtkinter.CTkButton(
             self.controlFramePositionButtons, text="Bereken overige posities",
-            command=self.CalculatePositions, border_color="black", border_width=2
+            command=self.CalculateButtonPressed, border_color="black", border_width=2
         ).grid(row=0, column=0, padx=10, pady=10, sticky="nw")
 
         self.testPositionModeVar = customtkinter.StringVar(value=False)
@@ -76,8 +77,8 @@ class AppFrameMap(customtkinter.CTkFrame):
             self.controlFramePositionButtons, text="Test mode", variable=self.testPositionModeVar,
            onvalue=True, offvalue=False,
            border_color="black", border_width=2, command=self.switchTest
-        ).grid(row=0, column=3, padx=10, pady=10, sticky="ne")
-        print("varrrrrrrrrrrrrrrrrr= ", self.testPositionModeVar.get())
+        ).grid(row=1, column=0, padx=10, pady=10, sticky="nw")
+        #print("varrrrrrrrrrrrrrrrrr= ", self.testPositionModeVar.get())
 
         customtkinter.CTkButton(
             self.controlFramePositionButtons, text="Verwijder berekende coordinaten",
@@ -104,6 +105,7 @@ class AppFrameMap(customtkinter.CTkFrame):
         self._road_fetch_bbox    = None  # bbox waarvoor data gecached is
         self._road_refresh_job   = None
         self._road_fetch_running = False
+        self.geolocator = Nominatim(user_agent="my_app")
 
     # ══════════════════════════════════════════════════════════════════════
     # Map controls
@@ -124,12 +126,12 @@ class AppFrameMap(customtkinter.CTkFrame):
                 "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
                 max_zoom=21)
 
-    def _on_scroll(self, event):
+    def _on_scroll(self, event=None):
         self.after(50, self._enforce_zoom)
         self.after(70, self._redraw_all)
         self._schedule_road_refresh()
 
-    def _on_pan_end(self, event):
+    def _on_pan_end(self, event=None):
         self.after(70, self._redraw_all)
         self._schedule_road_refresh()
         #self.map_widget.set_zoom(19)
@@ -264,6 +266,7 @@ class AppFrameMap(customtkinter.CTkFrame):
             "srsName":      "EPSG:4326",
             "bbox":         f"{lat_min},{lon_min},{lat_max},{lon_max},EPSG:4326",
             "count":        "2000",
+            "CQL_FILTER":   "dienstnaam LIKE 'RWS%'"
         }
 
         try:
@@ -271,11 +274,15 @@ class AppFrameMap(customtkinter.CTkFrame):
                                 headers=headers, timeout=15)
             resp.raise_for_status()
             data     = resp.json()
+            #print("data van weg is: ", data)
             features = data.get("features", [])
             print(f"[NWB WFS] {len(features)} wegvakken ontvangen.")
 
             polylines = []
             for feature in features:
+                props = feature.get("properties", {})
+                if not props.get("dienstnaam", "").startswith("RWS"):
+                    continue
                 geom = feature.get("geometry")
                 if geom is None:
                     continue
@@ -353,22 +360,37 @@ class AppFrameMap(customtkinter.CTkFrame):
         print("adding new marker:", coords)
         self.DeletePositions(markerText)
         newMarker = self.map_widget.set_marker(coords[0], coords[1], text=markerText)
+        location = self.geolocator.reverse(f"{coords[0]}, {coords[1]}")
+        print(location.raw)
+        self.AddIncidentLocation(location.raw["address"])
         self.markersDict[newMarker] = markerText
         self.map_widget.update_idletasks()
         self.marker_lines[newMarker] = [markerText, direction]
         self.addingMarker = False
         self.DrawMarkerLines()
 
-    def CalculatePositions(self, distance = 5):
-        print("calculateButtonPressed")
+    def CalculateButtonPressed(self):
+        ##get the variable if its test mode, then its a fixed value
         testModeVar = self.testPositionModeVar.get()
-        print(self.markersDict)
-        print(testModeVar)
-        print(testModeVar == "0")
-        if not self.markersDict or testModeVar == "0":
-            print("geen markers om op te berekenen of het is geen testmodus dus ook geen berekening")
+        ##if there are no markers on the map then there is nothing to calculate
+        if not self.markersDict:
+            print("geen markers om op te berekenen")
             return
+        ##if there are markers and testmode is on then send a fixed value to calculate
+        if testModeVar == "1":
+            amount = 1
+            distance = 5
+            motherBotPos = 1
+            self.CalculatePositions(distance=distance, amount=amount, motherBotPos=motherBotPos)
+        ##no test mode means a popup in which settings can be selected
+        else:
+            ##open the popup wnidow with the current robots in the list
+            self.pop_up(["robot1", "robot2"], self.AfterPopUpToCalculate)
+            
 
+    def CalculatePositions(self, distance = 5, amount = 1, motherBotPos=1):
+        print("calculateButtonPressed")
+        newPosList = [[None,None] for _ in range(amount)]
         first_marker        = list(self.markersDict.keys())[0]
         lat, lon            = first_marker.position
         direction           = self.marker_lines[first_marker][1]
@@ -419,6 +441,28 @@ class AppFrameMap(customtkinter.CTkFrame):
         print("coordsdict = ", coordsDict)
         self.sendMessageCallback(coordsDict)
 
+    def AddIncidentLocation(self, location):
+        print(location)
+        road = location.get("road")
+        city = location.get("city")
+        state = location.get("state")
+        self.incidentFrame= customtkinter.CTkFrame(self.controlFramePositionButtons)
+        self.incidentFrame.grid(row=0, column=3, rowspan=2, sticky="ne", padx=10, pady=10)
+        self.incidentLocationLabel = customtkinter.CTkLabel(self.incidentFrame, text=f"Incidentlocatie: {road}, {city}, {state}", fg_color='#01a6f8',corner_radius=5, text_color="black").grid(
+            row=0, column=0, padx=10, pady=5, sticky="ne")
+        self.buttonNaarIncident = customtkinter.CTkButton(
+                    self.incidentFrame, text="Ga naar positie",
+                    command=self.GoToCoords, border_color="black", border_width=2, fg_color="green"
+                    ).grid(row=1, column=0, padx=10, pady=10, sticky="nw")
+
+
+    def GoToCoords(self):
+        coords = next(iter(self.markersDict))
+        print(coords.position)
+        lat, lon = coords.position
+        self.map_widget.set_position(lat, lon)
+        self.map_widget.set_zoom(19)
+        self._on_scroll()
 
     def _latlon_to_canvas(self, lat, lon):
         """Converteert lat/lon naar canvas-pixelcoördinaten via TkinterMapView internals."""
@@ -436,3 +480,92 @@ class AppFrameMap(customtkinter.CTkFrame):
         cx = (tile_x - upper_left_x) * widget.tile_size
         cy = (tile_y - upper_left_y) * widget.tile_size
         return cx, cy
+
+
+    def AfterPopUpToCalculate(self, chosenSettings):
+        amount = chosenSettings["Aantal"]
+        formation = chosenSettings["Formatie"]
+        startRobot = chosenSettings["RobotStart"]
+
+        self.CalculatePositions(amount=amount)
+
+
+
+    def pop_up(self,listOfRobotNames, afterPopup):
+        print(listOfRobotNames)
+        #aantalRobots = 0
+
+        chosenSettings = {
+            "Aantal": None,
+            "Formatie":None,
+            "RobotStart": None}
+
+        def klaarKnopCommand():
+            if any(val == None for key, val in chosenSettings.items()):
+                   print("selecteer alle waardes voor returneren")
+                   return
+
+            popup.destroy()
+            afterPopup(chosenSettings)
+
+
+        def change_val(value):
+            try:
+                int(value)
+                print("chosen amount= ", value)
+                chosenSettings["Aantal"] = value
+            except:
+                pass
+        def changeFormation(formation):
+            chosenSettings["Formatie"] = formation
+
+        def changeStartRobot(robotName):
+            chosenSettings["RobotStart"] = robotName
+
+        popup = customtkinter.CTkToplevel(self)
+        popup.title("Instellingen voor berekeningen")
+        popup.wm_maxsize(300, 400)
+        popup.wm_resizable(False, False)
+
+
+        #####frame voor kiezen hoeveelheid robots
+        control_frameOptionMenuChoise = customtkinter.CTkFrame(popup)
+        control_frameOptionMenuChoise.grid(row=2, column=0, sticky="nw", padx=10, pady=10)
+
+        HvlheidRobotsLabel=customtkinter.CTkLabel(control_frameOptionMenuChoise, text="Hoeveelheid robots:", anchor="w").grid(
+                row=0, column=0, padx=10, pady=(5, 0), sticky="nw")
+        map_option_menu = customtkinter.CTkOptionMenu(
+                control_frameOptionMenuChoise,
+                values=[str(i) for i in range(1,11)],
+                command=change_val
+            )
+        map_option_menu.grid(row=1, column=0, padx=10, pady=(0, 10), sticky="nw")
+
+        #####frame voor kiezen formatie
+        control_frameFormationChoise = customtkinter.CTkFrame(popup)
+        control_frameFormationChoise.grid(row=3, column=0, sticky="nw", padx=10, pady=10)
+
+        HvlheidRobotsLabel=customtkinter.CTkLabel(control_frameFormationChoise, text="Welke formatie:", anchor="w").grid(
+                row=0, column=0, padx=10, pady=(5, 0), sticky="nw")
+        formationOptionMenu = customtkinter.CTkOptionMenu(
+                control_frameFormationChoise,
+                values=["CROW-standaard", "Bocht", "Test"],
+                command=changeFormation
+            )
+        formationOptionMenu.grid(row=1, column=0, padx=10, pady=(0, 10), sticky="nw")
+
+        #####frame voor kiezen welke robot zijn pos heeft gestuurd
+        control_frameCurrentRobotChoise = customtkinter.CTkFrame(popup)
+        control_frameCurrentRobotChoise.grid(row=4, column=0, sticky="nw", padx=10, pady=10)
+
+        welkeRobotsVal=customtkinter.CTkLabel(control_frameCurrentRobotChoise, text="Welke robot:", anchor="w").grid(
+                row=0, column=0, padx=10, pady=(5, 0), sticky="nw")
+        huidigeRobotOptionMenu = customtkinter.CTkOptionMenu(
+                control_frameCurrentRobotChoise,
+                values=[str(i) for i in listOfRobotNames],
+                command=changeStartRobot
+            )
+        huidigeRobotOptionMenu.grid(row=1, column=0, padx=10, pady=(0, 10), sticky="nw")
+
+        klaarKnop = customtkinter.CTkButton(popup, text="Configuratie klaar",command=klaarKnopCommand)
+        klaarKnop.grid(row=5, column=0, pady=10)

@@ -17,7 +17,7 @@ keyfile=r"C:\stage_HBO3_FMN\certificaten\GUI-key.pem"
 
 
 
-# def pop_up(listOfRobotNames, popupDataSubmit, root):
+# def pop_up(listOfRobotNames, popupDataList, root):
 #     print(listOfRobotNames)
 #     aantalRobots = 0
 

@@ -82,7 +82,12 @@ class app(customtkinter.CTk):
         robotsToSendTo = [key for key in robotNames if key not in coordsDict]
         coords = [val for key, val in coordsDict.items() if val != None]
 
+        print("robotstosendto: ", robotsToSendTo)
+        print("coords zjin: ", coords)
+
         if self.MQTTClient is not None:
             for index in range(len(coords)):
+
                 self.MQTTClient.send_message(f"Commands/{robotsToSendTo[index]}/{msgField}", f"{coords[index][0]},{coords[index][1]}")
                 print(f"Commands/{robotsToSendTo[index]}/{msgField}", f"{coords[index][0]},{coords[index][1]}")
+

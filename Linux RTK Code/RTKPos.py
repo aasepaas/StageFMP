@@ -5,6 +5,11 @@ from time import sleep
 from pyubx2 import UBXReader
 from pygnssutils import GNSSNTRIPClient
 import time
+from RTK import RTK
+from dotenv import load_dotenv
+import os
+load_dotenv()
+
 
 # --- Linux serial port (change to /dev/ttyACM0 if needed) ---
 # Check with: ls /dev/ttyUSB* /dev/ttyACM*
@@ -18,7 +23,7 @@ NTRIP_PORT     = 2101
 MOUNTPOINT     = "AUTO"
 NTRIP_USER     = "RTKsub_VFYLQ"
 NTRIP_PASSWORD = "3410046967"
-GGAMODE        = 1
+GGAMODE        = 0
 GGAINT         = 10
 TIMEOUT_SECS   = 60  # max seconds before giving up
 
@@ -37,7 +42,7 @@ def read_gnss(ser: Serial) -> None:
                 if parsed is None:
                     continue
                 if hasattr(parsed, "lat") and parsed.lat != 0:
-                    print("parsed is: ", parsed)
+                    #print("parsed is: ", parsed)
                     lat = float(parsed.lat)
                     lon = float(parsed.lon)
                     print(f"LAT: {lat:.8f}  LON: {lon:.8f}")
@@ -83,6 +88,8 @@ def main() -> None:
                 print("ERROR: NTRIP connection failed — check server/credentials")
                 return
             print("NTRIP connected. Waiting for RTK fix...")
+            sleep(20)  # give it a moment to start streaming
+
 
             Thread(target=read_gnss, args=(ser,), daemon=True).start()
             Thread(target=send_rtcm, args=(ser,), daemon=True).start()
@@ -102,4 +109,7 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    RTKPos = RTK()
+    RTKPos.run()
+
+    #main()

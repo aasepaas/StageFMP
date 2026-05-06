@@ -4,7 +4,7 @@ from paho.mqtt import client as mqtt_client
 
 from virtualMQTTClient import VirtualMQTTclient
 
-from customLogger import customLogger
+
 
 class MQTTClient(VirtualMQTTclient):
     _instance = None
@@ -17,8 +17,7 @@ class MQTTClient(VirtualMQTTclient):
 
     def __init__(self, brokerINC, portINC, client_idINC, ca_certs, certfile, keyfile, on_message_handler=None, topicINC = None):
         if hasattr(self, "startLoop"):
-            self.logger.prRed("Helaas object bestaat al")
-            print(self.logger.getWaarde())
+            print("Helaas object bestaat al")
             return
         self.broker_address = brokerINC
         self.port = portINC
@@ -39,10 +38,7 @@ class MQTTClient(VirtualMQTTclient):
         self.ca_certs = ca_certs
         self.certfile = certfile
         self.keyfile = keyfile
-        self.logger = customLogger()
-        print(self.logger.getWaarde())
 
-        self.logger.prPurple("Nieuwe object aangemaakt")
 
         
 

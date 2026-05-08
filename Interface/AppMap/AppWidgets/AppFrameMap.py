@@ -117,7 +117,7 @@ class AppFrameMap(customtkinter.CTkFrame):
                              padx=(10, 10), pady=(0, 0))
 
         self.label = customtkinter.CTkLabel(
-            self, text="Map", fg_color='#01a6f8',
+            self, text="Map:", fg_color='#01a6f8',
             width=100, height=20, font=('Bold', 28), corner_radius=5
         )
         self.label.grid(row=0, column=0, sticky="nw", padx=(8, 8), pady=(5, 5))
@@ -129,12 +129,12 @@ class AppFrameMap(customtkinter.CTkFrame):
         self.control_frame = customtkinter.CTkFrame(self)
         self.control_frame.grid(row=2, column=0, sticky="nw", padx=10, pady=10)
 
-        customtkinter.CTkLabel(self.control_frame, text="Tile Server:", anchor="w").grid(
+        customtkinter.CTkLabel(self.control_frame, text="Soort map:", anchor="w").grid(
             row=0, column=0, padx=10, pady=(5, 0), sticky="nw")
 
         self.map_option_menu = customtkinter.CTkOptionMenu(
             self.control_frame,
-            values=["Maps normal", "Maps satellite"],
+            values=["Map normaal", "Map satelliet"],
             command=self.change_map
         )
         self.map_option_menu.grid(row=2, column=0, padx=10, pady=(0, 10), sticky="nw")
@@ -144,7 +144,7 @@ class AppFrameMap(customtkinter.CTkFrame):
             max_zoom=21
         )
         self.map_widget.set_position(52.0172355, 4.3712940)
-        self.map_option_menu.set("Maps satellite")
+        self.map_option_menu.set("Map satelliet")
         self.MAX_ZOOM = 21
 
         self.after(500, self._draw_scale)
@@ -210,12 +210,12 @@ class AppFrameMap(customtkinter.CTkFrame):
         print(self.testPositionModeVar.get())
 
     def change_map(self, new_map: str):
-        if new_map == "Maps normal":
+        if new_map == "Map normaal":
             self.MAX_ZOOM = 20
             self.map_widget.set_tile_server(
                 "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}",
                 max_zoom=20)
-        elif new_map == "Maps satellite":
+        elif new_map == "Map satelliet":
             self.MAX_ZOOM = 21
             self.map_widget.set_tile_server(
                 "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
@@ -644,7 +644,7 @@ class AppFrameMap(customtkinter.CTkFrame):
         else:
             self.pop_up(["robot1", "robot2"], self.AfterPopUpToCalculate)
 
-    def CalculatePositions(self, distance=5, amount=1, motherBotPos=1):
+    def CalculatePositions(self, distance=10, amount=1, motherBotPos=1):
         """
         Berekent 'amount' posities op de vluchtstrook.
 
@@ -686,7 +686,7 @@ class AppFrameMap(customtkinter.CTkFrame):
             self.AddMarker((snap_lat, snap_lon), direction, markerText=f"calculated{i}")
 
         # Helplijnen tekenen (behoud bestaande functionaliteit)
-        self.CheckNearestPointOfLine([lat, lon])
+        #self.CheckNearestPointOfLine([lat, lon])
 
         # Herteken de vluchtstrook overlay
         self._draw_offset_roads()
@@ -760,15 +760,35 @@ class AppFrameMap(customtkinter.CTkFrame):
         state = location.get("state")
         self.incidentFrame = customtkinter.CTkFrame(self.controlFramePositionButtons)
         self.incidentFrame.grid(row=0, column=3, rowspan=2, sticky="ne", padx=10, pady=10)
+        # customtkinter.CTkLabel(
+        #     self.incidentFrame,
+        #     text=f"Incidentlocatie:\n{road}, {city}, {state}",
+        #     fg_color='#01a6f8', corner_radius=5, text_color="black"
+        # ).grid(row=0, column=0, padx=10, pady=5, sticky="ne")
+
+        # Bold titel
         customtkinter.CTkLabel(
             self.incidentFrame,
-            text=f"Incidentlocatie: {road}, {city}, {state}",
-            fg_color='#01a6f8', corner_radius=5, text_color="black"
-        ).grid(row=0, column=0, padx=10, pady=5, sticky="ne")
+            text="Incidentlocatie:",
+            font=("Arial", 14, "bold"),
+            fg_color='#01a6f8',
+            corner_radius=5,
+            text_color="black"
+        ).grid(row=0, column=0, padx=10, pady=(5,0), sticky="w")
+
+        # Normale locatie
+        customtkinter.CTkLabel(
+            self.incidentFrame,
+            text=f"{road}, {city}, {state}",
+            fg_color='#01a6f8',
+            corner_radius=5,
+            text_color="black"
+        ).grid(row=1, column=0, padx=10, pady=(0,5), sticky="w")
+
         customtkinter.CTkButton(
             self.incidentFrame, text="Ga naar positie",
             command=self.GoToCoords, border_color="black", border_width=2, fg_color="green"
-        ).grid(row=1, column=0, padx=10, pady=10, sticky="nw")
+        ).grid(row=2, column=0, padx=10, pady=10, sticky="nw")
 
     def GoToCoords(self):
         coords = next(iter(self.markersDict))

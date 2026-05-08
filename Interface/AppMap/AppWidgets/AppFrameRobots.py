@@ -25,7 +25,7 @@ class AppFrameRobots(customtkinter.CTkFrame):
         self.grid_rowconfigure(1, weight=14)
         self.grid_rowconfigure(2, weight=1)
 
-        self.label = customtkinter.CTkLabel(self, text="Robot list:",
+        self.label = customtkinter.CTkLabel(self, text="Verkeerskegelrobots:",
                                             fg_color='#01a6f8', 
                                             width=100,
                                             height=20,

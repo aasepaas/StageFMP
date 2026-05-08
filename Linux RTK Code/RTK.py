@@ -31,6 +31,9 @@ class RTK:
         print(f"RTK initialized with serial_port={serial_port}, ntrip_server={ntrip_server}:{ntrip_port}, mountpoint={mountpoint}", "user=" + ntrip_user, "ggamode=" + str(ggamode), "ggainterval=" + str(ggainterval), 
               "timeout_secs=" + str(timout_secs))
 
+        self.currentlyCalculating = False
+        self.latitude = None
+        self.longitude = None
 
     def read_gnss(self, ser: Serial) -> None:
         """Read and print GNSS/UBX messages from the receiver."""
@@ -46,6 +49,8 @@ class RTK:
                         lat = float(parsed.lat)
                         lon = float(parsed.lon)
                         print(f"LAT: {lat:.8f}  LON: {lon:.8f}")
+                        self.latitude = lat
+                        self.longitude = lon
                     if parsed.identity == "RXM-RTCM":
                         print(f"  RTCM msg {parsed.msgType} used={parsed.msgUsed}")
                     if hasattr(parsed, "fixType"):
@@ -63,6 +68,10 @@ class RTK:
                     ser.write(raw)
             except Exception:
                 pass  # queue.get timeout is normal
+    def GetLatLongValues(self):
+        if not self.currentlyCalculating:
+            return self.latitude, self.longitude
+        return None, None
 
     def run(self) -> None:
         """ Connect to the ntrip caster and start reading/writing to the serial port to determine position with RTK corrections.""" 
@@ -91,7 +100,7 @@ class RTK:
                 send_thread = Thread(target=self.send_rtcm, args=(ser,))
                 read_thread.start()
                 send_thread.start()
-
+                self.currentlyCalculating = True
                 start_time = time.time()
                 while time.time() - start_time < self.timeout_secs:
                     time.sleep(1)
@@ -99,5 +108,6 @@ class RTK:
                 self.stop.set()
                 read_thread.join()
                 send_thread.join()
+                self.currentlyCalculating = False
 
 

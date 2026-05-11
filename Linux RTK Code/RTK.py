@@ -6,6 +6,7 @@ from pygnssutils import GNSSNTRIPClient
 import time
 from dotenv import load_dotenv
 import os
+import math
 
 load_dotenv()
 
@@ -34,6 +35,11 @@ class RTK:
         self.currentlyCalculating = False
         self.latitude = None
         self.longitude = None
+        self.prev_latitude = None
+        self.prev_longitude = None
+        
+        self.heading_degrees = None
+        self.heading_cardinal = None
 
     def read_gnss(self, ser: Serial) -> None:
         """Read and print GNSS/UBX messages from the receiver."""
@@ -51,6 +57,13 @@ class RTK:
                         print(f"LAT: {lat:.8f}  LON: {lon:.8f}")
                         self.latitude = lat
                         self.longitude = lon
+                        self.update_heading(lat, lon)
+                        print(
+                            f"LAT: {lat:.8f}  "
+                            f"LON: {lon:.8f}  "
+                            f"HDG: {self.heading_degrees:.1f}° "
+                            f"{self.heading_cardinal}"
+                        )
                     if parsed.identity == "RXM-RTCM":
                         print(f"  RTCM msg {parsed.msgType} used={parsed.msgUsed}")
                     if hasattr(parsed, "fixType"):
@@ -72,6 +85,11 @@ class RTK:
         if not self.currentlyCalculating:
             return self.latitude, self.longitude
         return None, None
+    def GetHeading(self):
+        if not self.currentlyCalculating:
+            return self.heading_degrees, self.heading_cardinal
+        return None, None
+
 
     def run(self) -> None:
         """ Connect to the ntrip caster and start reading/writing to the serial port to determine position with RTK corrections.""" 
@@ -110,4 +128,69 @@ class RTK:
                 send_thread.join()
                 self.currentlyCalculating = False
 
-
+    def calculate_heading(self, lat1, lon1, lat2, lon2):
+        """
+        Calculate heading/bearing between two GPS coordinates.
+        Returns heading in degrees (0-360).
+        """
+    
+        lat1 = math.radians(lat1)
+        lon1 = math.radians(lon1)
+    
+        lat2 = math.radians(lat2)
+        lon2 = math.radians(lon2)
+    
+        dlon = lon2 - lon1
+    
+        x = math.sin(dlon) * math.cos(lat2)
+        y = (
+            math.cos(lat1) * math.sin(lat2)
+            - math.sin(lat1) * math.cos(lat2) * math.cos(dlon)
+        )
+    
+        initial_bearing = math.atan2(x, y)
+    
+        bearing = math.degrees(initial_bearing)
+        bearing = (bearing + 360) % 360
+    
+        return bearing
+    
+    
+    def degrees_to_cardinal(self, degrees):
+        """
+        Convert heading degrees to compass direction.
+        """
+    
+        directions = [
+            "N", "NNE", "NE", "ENE",
+            "E", "ESE", "SE", "SSE",
+            "S", "SSW", "SW", "WSW",
+            "W", "WNW", "NW", "NNW"
+        ]
+    
+        index = round(degrees / 22.5) % 16
+        return directions[index]
+    
+    
+    def update_heading(self, new_lat, new_lon):
+        """
+        Update heading using previous and current coordinates.
+        """
+    
+        if self.prev_latitude is None or self.prev_longitude is None:
+            self.prev_latitude = new_lat
+            self.prev_longitude = new_lon
+            return
+    
+        heading = self.calculate_heading(
+            self.prev_latitude,
+            self.prev_longitude,
+            new_lat,
+            new_lon
+        )
+    
+        self.heading_degrees = heading
+        self.heading_cardinal = self.degrees_to_cardinal(heading)
+    
+        self.prev_latitude = new_lat
+        self.prev_longitude = new_lon

@@ -47,6 +47,7 @@ class AppFrameRobots(customtkinter.CTkFrame):
             self.addRobot(splitTopic[1])
 
         markerToBePlaced =self.updateRobotValue(name= splitTopic[1], valueField=splitTopic[2], value=decodedMessage)
+        print("marker to be placed in parsed message = ", markerToBePlaced)
         print("returingning after parse message")
         return markerToBePlaced
         
@@ -69,6 +70,8 @@ class AppFrameRobots(customtkinter.CTkFrame):
             checkedPositions = self.PositionCheck(value)
             if checkedPositions:
                 ###check if new positions are the same as old positions, if not set new values
+                print("comparing previous coords old = ",  self.robotsDict[name].GetCurrentPosition())
+                print("new positions to check = ", checkedPositions)
                 if not(checkedPositions == self.robotsDict[name].GetCurrentPosition()):
                     self.robotsDict[name].SetCurrentPosition(checkedPositions)
                     ###return that a new marker needs to be placed
@@ -131,6 +134,12 @@ class AppFrameRobots(customtkinter.CTkFrame):
         robotNames = [key for key, val in self.robotsDict.items()]
         print(robotNames)
         return robotNames 
+
+    def Reset(self):
+        keyList = [k for k,v in self.robotsDict.items()]
+        for k in keyList:
+            del self.robotsDict[k]
+        self.scrolFrame.ResetList()
 
 
 

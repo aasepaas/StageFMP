@@ -134,3 +134,10 @@ class AppScrolFrameRobots(customtkinter.CTkScrollableFrame):
             robot_data['img_label'].image = new_ctk_image  # Referentie behouden
             
             print(f"Updated {robotName} status to {updateValue}")
+
+    def ResetList(self):
+        robotList = [k for k,v in self.robotFrames.items()]
+        for k in robotList:
+            robot_data = self.robotFrames[k]
+            robot_data['frame'].destroy()
+            del self.robotFrames[k]

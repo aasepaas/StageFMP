@@ -1,4 +1,7 @@
 ﻿#from mainInterface import App
+from calendar import setfirstweekday
+from sqlite3 import SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE
+from token import COMMA
 from AppMap import app
 from time import sleep
 import customtkinter as ctk
@@ -9,7 +12,7 @@ import math
 
 
 
-ca_certs=r"C:\stage_HBO3_FMN\MQTT-container\emqx_setup\certs\ca_chain.pem"
+ca_certs=r"C:\stage_HBO3_FMN\certificaten\ca_root.pem"
 certfile=r"C:\stage_HBO3_FMN\certificaten\GUI-cert.pem"
 keyfile=r"C:\stage_HBO3_FMN\certificaten\GUI-key.pem"
 
@@ -83,6 +86,24 @@ keyfile=r"C:\stage_HBO3_FMN\certificaten\GUI-key.pem"
 # root.mainloop()
 
 
+# class App(ctk.CTk):
+#     def __init__(self):
+#         super().__init__()
+#         self.grid_rowconfigure(0, weight=1)  # configure grid system
+#         self.grid_columnconfigure(0, weight=1)
+
+#         self.textbox = ctk.CTkTextbox(master=self, width=400, corner_radius=0)
+#         self.textbox.grid(row=0, column=0, sticky="nsew")
+#         self.textbox.insert("0.0", "Some example text!\n")
+#         self.doneTextbox = ctk.CTkButton(self, command=self.buttonPressed).grid(row=1, column=1, sticky="nsew")
+
+#     def buttonPressed(self):
+#         print(self.textbox.get("0.0", "end"))
+
+
+# app = App()
+# app.mainloop()
+
 if __name__ == "__main__":
 
     def on_message(client, userdata, msg):
@@ -93,7 +114,7 @@ if __name__ == "__main__":
 
 
 
-    MQTTClient1 = MQTTClient("MQTTserver", 8883, "GUI", ca_certs, certfile, keyfile)
+    MQTTClient1 = MQTTClient("localhost", 8883, "GUI", ca_certs, certfile, keyfile)
     app = app(MQTTClient1)
 
     MQTTClient1.SetMessageHandler(app.MessageHandler)

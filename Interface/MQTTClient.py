@@ -17,8 +17,8 @@ class MQTTClient(VirtualMQTTclient):
 
     def __init__(self, brokerINC, portINC, client_idINC, ca_certs, certfile, keyfile, on_message_handler=None, topicINC = None):
         if hasattr(self, "startLoop"):
-            self.logger.prRed("Helaas object bestaat al")
-            print(self.logger.getWaarde())
+            #self.logger.prRed("Helaas object bestaat al")
+            #print(self.logger.getWaarde())
             return
         self.broker_address = brokerINC
         self.port = portINC
@@ -40,11 +40,11 @@ class MQTTClient(VirtualMQTTclient):
         self.ca_certs = ca_certs
         self.certfile = certfile
         self.keyfile = keyfile
-        self.logger = customLogger()
-        print(self.logger.getWaarde())
+        #self.logger = customLogger()
+        #print(self.logger.getWaarde())
 
 
-        self.logger.prPurple("Nieuwe object aangemaakt")
+        #self.logger.prPurple("Nieuwe object aangemaakt")
 
         
 
@@ -66,13 +66,17 @@ class MQTTClient(VirtualMQTTclient):
                     certfile=self.certfile,
                     keyfile=self.keyfile,
                     cert_reqs=ssl.CERT_REQUIRED, # Require peer certificate verification
-                    tls_version=ssl.PROTOCOL_TLSv1_2
+                    tls_version=ssl.PROTOCOL_TLS_CLIENT
                 )
                 self.connected = True
+                print("Succesfully connected the broker")
             else:
+                print("ERROR: Couldnt connect to the broker")
                 return False
             
             self.MQTTClientLib.connect(self.broker_address, self.port, 60)
+            self.MQTTClientLib.reconnect_delay_set(min_delay=1, max_delay=120)
+
 
 
     def sendToBroker(self):

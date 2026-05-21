@@ -17,8 +17,6 @@ class MQTTClient(VirtualMQTTclient):
 
     def __init__(self, brokerINC, portINC, client_idINC, ca_certs, certfile, keyfile, on_message_handler=None, topicINC = None):
         if hasattr(self, "startLoop"):
-            #self.logger.prRed("Helaas object bestaat al")
-            #print(self.logger.getWaarde())
             return
         self.broker_address = brokerINC
         self.port = portINC
@@ -30,7 +28,8 @@ class MQTTClient(VirtualMQTTclient):
         self.startLoop = False
 
         self.MQTTClientLib.on_connect = self._on_connect_callback
-        
+        self.MQTTClientLib.on_disconnect = self._on_disconnect_callback
+
         # Assign a custom message handler or use the default one
         if on_message_handler:
             self.MQTTClientLib.on_message = on_message_handler
@@ -40,24 +39,25 @@ class MQTTClient(VirtualMQTTclient):
         self.ca_certs = ca_certs
         self.certfile = certfile
         self.keyfile = keyfile
-        #self.logger = customLogger()
-        #print(self.logger.getWaarde())
-
-
-        #self.logger.prPurple("Nieuwe object aangemaakt")
-
-        
 
 
     def _on_connect_callback(self, client, userdata, flags, reason_code, properties):
         """Callback for when the client connects to the broker."""
         if reason_code == 0:
+            self.connected = True
             print(f"Subscriber client '{self.client_id}' connected successfully to the broker!")
         else:
+            self.connected = False
             print(f"Subscriber client '{self.client_id}' failed to connect, reason code: {reason_code}")
+
+    def _on_disconnect_callback(self, client, userdata, rc, properties=None):
+        self.connected = False
+        print(f"DISCONNECTED: rc={rc}")
 
     def connectToBroker(self):
         """Configures TLS settings and connects to the broker."""
+        if self.connected:
+            return True
         if not self.connected:
             if self.ca_certs and self.certfile and self.keyfile:
                 # Set up the mTLS connection

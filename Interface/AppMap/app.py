@@ -44,19 +44,22 @@ class app(customtkinter.CTk):
         self.grid_rowconfigure(1, weight=4)
         self.grid_rowconfigure(2, weight=1)
 
-        self.var = customtkinter.BooleanVar()
-
         self.MQTTClient = mqttClient
-
-        self.mapViewer = AppFrameMap(self, sendCallback=self.SendCoordinatesToRobots, resetCallback=self.ResetInterface)
-        self.mapViewer.grid(row=0, column=1, rowspan=3, padx=10, pady=(0,10), sticky="nswe")
         self.robotViewer = AppFrameRobots(self)
         self.robotViewer.grid(row=0, column=0, rowspan=3, padx=(10,0), pady=(0,10), sticky="nswe")
+
+        self.mapViewer = AppFrameMap(self, sendCallback=self.SendCoordinatesToRobots, resetCallback=self.ResetInterface, getRobotNames=self.robotViewer.GetRobotNames)
+        self.mapViewer.grid(row=0, column=1, rowspan=3, padx=10, pady=(0,10), sticky="nswe")
+
 
 
 
     def startGUI(self):
         self.mainloop()
+
+    # def GetRobotNames(self):
+    #     robotNames = self.robotViewer.GetRobotNames()
+    #     print("Robotnamen zijn: ", robotNames)
 
     def makeNewMarker(self, markerToBePlaced):
         print("makeNewMarker van app")
@@ -88,7 +91,6 @@ class app(customtkinter.CTk):
         try:
             if self.MQTTClient is not None:
                 for index in range(indexRange):
-
                     self.MQTTClient.send_message(f"Commands/{robotsToSendTo[index]}/{msgField}", f"{coords[index][0]},{coords[index][1]}")
                     print(f"Commands/{robotsToSendTo[index]}/{msgField}", f"{coords[index][0]},{coords[index][1]}")
         except Exception as e:

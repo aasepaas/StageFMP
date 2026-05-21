@@ -1,171 +1,34 @@
-﻿from os import close
-from tracemalloc import start
-import customtkinter
+﻿import customtkinter
 from tkintermapview import TkinterMapView
 import math
 import threading
 import requests
 from geopy.geocoders import Nominatim
-from AppMap.AppWidgets.FormationParser import parse_input
 from AppMap.AppWidgets.PopupWindow import PopupWindow
+from AppMap.AppWidgets.FormationCalculator import _latlon_to_local_xy, offset_polyline, _project_onto_polyline, _point_along_polyline
+
 
 ARROWLENGTH    = 50
 PDOK_WFS_URL   = "https://service.pdok.nl/rws/nationaal-wegenbestand-wegen/wfs/v1_0"
 ROAD_DRAW_ZOOM = 18
-
-
-# ══════════════════════════════════════════════════════════════════════
-# Hulpfuncties voor parallel offset (buiten de klasse, puur wiskundig)
-# ══════════════════════════════════════════════════════════════════════
-
-def _latlon_to_local_xy(lat, lon, ref_lat, ref_lon):
-    """Converteert lat/lon naar lokale Cartesische meters t.o.v. referentiepunt."""
-    R = 6371000
-    x = math.radians(lon - ref_lon) * R * math.cos(math.radians(ref_lat))
-    y = math.radians(lat - ref_lat) * R
-    return x, y
-
-
-def _local_xy_to_latlon(x, y, ref_lat, ref_lon):
-    """Converteert lokale Cartesische meters terug naar lat/lon."""
-    R = 6371000
-    lat = ref_lat + math.degrees(y / R)
-    lon = ref_lon + math.degrees(x / (R * math.cos(math.radians(ref_lat))))
-    return lat, lon
-
-
-def offset_polyline(polyline_latlon, offset_x, offset_y):
-    """
-    Verschuift een polyline parallel zodat de lijn door een specifiek punt gaat.
-    """
-    if len(polyline_latlon) < 2:
-        return list(polyline_latlon)
-
-    ref_lat, ref_lon = polyline_latlon[0]
-    xy = [_latlon_to_local_xy(lat, lon, ref_lat, ref_lon)
-          for lat, lon in polyline_latlon]
-
-    normals = []
-    for i in range(len(xy) - 1):
-        dx = xy[i + 1][0] - xy[i][0]
-        dy = xy[i + 1][1] - xy[i][1]
-        seg_len = math.hypot(dx, dy)
-        if seg_len < 1e-9:
-            normals.append((0.0, 0.0))
-        else:
-            normals.append((dy / seg_len, -dx / seg_len))
-
-    result = []
-    for i in range(len(xy)):
-        if i == 0:
-            nx, ny = normals[0]
-        elif i == len(xy) - 1:
-            nx, ny = normals[-1]
-        else:
-            nx = (normals[i - 1][0] + normals[i][0]) / 2
-            ny = (normals[i - 1][1] + normals[i][1]) / 2
-            n_len = math.hypot(nx, ny)
-            if n_len > 1e-9:
-                nx /= n_len
-                ny /= n_len
-
-        projection = offset_x * nx + offset_y * ny
-        new_x = xy[i][0] + projection * nx
-        new_y = xy[i][1] + projection * ny
-        result.append(_local_xy_to_latlon(new_x, new_y, ref_lat, ref_lon))
-
-    return result
-
-
-def _polyline_length_along(polyline_latlon):
-    """
-    Geeft een lijst van cumulatieve afstanden (in meters) langs de polyline.
-    Lengte van de lijst = len(polyline_latlon).
-    """
-    ref_lat, ref_lon = polyline_latlon[0]
-    xy = [_latlon_to_local_xy(lat, lon, ref_lat, ref_lon)
-          for lat, lon in polyline_latlon]
-    dists = [0.0]
-    for i in range(1, len(xy)):
-        seg = math.hypot(xy[i][0] - xy[i-1][0], xy[i][1] - xy[i-1][1])
-        dists.append(dists[-1] + seg)
-    return dists
-
-
-def _project_onto_polyline(lat, lon, polyline_latlon):
-    """
-    Projecteert (lat, lon) op de polyline.
-
-    Returns:
-        (foot_lat, foot_lon, along_dist, segment_idx, t)
-        along_dist  : afstand langs de polyline tot het voetloodpunt (meters)
-        segment_idx : index van het segment waarop geprojecteerd is
-        t           : parameter [0,1] binnen dat segment
-    """
-    ref_lat, ref_lon = polyline_latlon[0]
-    px, py = _latlon_to_local_xy(lat, lon, ref_lat, ref_lon)
-    xy = [_latlon_to_local_xy(la, lo, ref_lat, ref_lon) for la, lo in polyline_latlon]
-
-    cum_dists = [0.0]
-    for i in range(1, len(xy)):
-        cum_dists.append(cum_dists[-1] + math.hypot(xy[i][0]-xy[i-1][0], xy[i][1]-xy[i-1][1]))
-
-    best_dist   = float("inf")
-    best_foot   = (px, py)
-    best_along  = 0.0
-    best_seg    = 0
-    best_t      = 0.0
-
-    for i in range(len(xy) - 1):
-        x1, y1 = xy[i]
-        x2, y2 = xy[i + 1]
-        dx, dy  = x2 - x1, y2 - y1
-        len_sq  = dx * dx + dy * dy
-        if len_sq < 1e-9:
-            continue
-        t  = max(0.0, min(1.0, ((px - x1) * dx + (py - y1) * dy) / len_sq))
-        fx = x1 + t * dx
-        fy = y1 + t * dy
-        d  = math.hypot(px - fx, py - fy)
-        if d < best_dist:
-            best_dist  = d
-            best_foot  = (fx, fy)
-            best_along = cum_dists[i] + t * math.hypot(dx, dy)
-            best_seg   = i
-            best_t     = t
-
-    foot_lat, foot_lon = _local_xy_to_latlon(best_foot[0], best_foot[1], ref_lat, ref_lon)
-    return foot_lat, foot_lon, best_along, best_seg, best_t
-
-
-def _point_along_polyline(polyline_latlon, along_dist):
-    """
-    Geeft het punt op de polyline op afstand `along_dist` meters vanaf het begin.
-    Knipt af aan begin of einde als along_dist buiten bereik valt.
-    """
-    ref_lat, ref_lon = polyline_latlon[0]
-    xy = [_latlon_to_local_xy(la, lo, ref_lat, ref_lon) for la, lo in polyline_latlon]
-
-    cum = 0.0
-    for i in range(len(xy) - 1):
-        seg_len = math.hypot(xy[i+1][0]-xy[i][0], xy[i+1][1]-xy[i][1])
-        if cum + seg_len >= along_dist:
-            t  = (along_dist - cum) / seg_len if seg_len > 1e-9 else 0.0
-            lx = xy[i][0] + t * (xy[i+1][0] - xy[i][0])
-            ly = xy[i][1] + t * (xy[i+1][1] - xy[i][1])
-            return _local_xy_to_latlon(lx, ly, ref_lat, ref_lon)
-        cum += seg_len
-
-    # Voorbij het einde → laatste punt teruggeven
-    return polyline_latlon[-1]
+marker_color_outside = "#4194f2" #1
+marker_color_circle = "#0c509c" #2
+marker_color_text = "#043469" #3
+NWBLineSettings = {1: "#FFD700", 2: 5}
+helpLineSettings = {1:"#FF6600", 2:5}
+NWBLine = "NWBLine"
+helpLine = "helpLine"
+posMarker = "posMarker"
+calcMarker = "calcMarker"
 
 
 class AppFrameMap(customtkinter.CTkFrame):
-    def __init__(self, master, sendCallback, resetCallback):
+    def __init__(self, master, sendCallback, resetCallback, getRobotNames):
         super().__init__(master)
 
         self.sendMessageCallback = sendCallback
         self.resetInterface = resetCallback
+        self.getRobotNames = getRobotNames
 
         self.grid_columnconfigure(1, weight=1)
         self.grid_rowconfigure(0, weight=0)
@@ -218,6 +81,7 @@ class AppFrameMap(customtkinter.CTkFrame):
         self.MAX_ZOOM = 21
 
         self.after(500, self._draw_scale)
+        self.after(500, self.DrawLegend)
 
         self.map_widget.add_right_click_menu_command(
             label="Add Marker", command=self.AddMarker, pass_coords=True)
@@ -260,22 +124,21 @@ class AppFrameMap(customtkinter.CTkFrame):
         # ── Road overlay state ─────────────────────────────────────────────
         self._ROAD_TAG           = "nwb_roads"
         self._OFFSET_TAG         = "vluchtstrook_roads"
-        self.THROUGHMARKER       = "vluchtstrook"
         self._road_polylines     = []
         self._road_fetch_bbox    = None
         self._road_refresh_job   = None
         self._road_fetch_running = False
         self.geolocator          = Nominatim(user_agent="my_app")
-        self.helpLineMarker      = {}
 
         # ── Vluchtstrook state ─────────────────────────────────────────────
         # Slechts ÉÉN verschoven polyline — de dichtstbijzijnde NWB-lijn
         # verschoven zodat hij door de marker gaat.
         self._offset_polyline_single = None   # list of (lat, lon)  ← nieuw
-        self._offset_polylines       = []     # behouden voor compatibiliteit (leeg houden)
         self.incidentFrame = None
+        self.legendToDraw = set()
 
         self.popupWindow = PopupWindow(self, self.AfterPopUpToCalculate)
+
 
     # ══════════════════════════════════════════════════════════════════════
     # Map controls
@@ -335,6 +198,178 @@ class AppFrameMap(customtkinter.CTkFrame):
                            fill="white", font=("Arial", 10, "bold"), tags="scale")
         self.after(500, self._draw_scale)
 
+
+    def DrawLegend(self):
+        canvas = self.map_widget.canvas
+
+        # verwijder oude legenda
+        canvas.delete("legend")
+
+        w = self.map_widget.winfo_width()
+        h = self.map_widget.winfo_height()
+
+        # widget nog niet geladen
+        if w < 10 or h < 10:
+            self.after(200, self.DrawLegend)
+            return
+
+        # niets tekenen
+        if not self.legendToDraw:
+            self.after(500, self.DrawLegend)
+            return
+
+
+        # beginpositie legenda
+        start_x = 20
+        current_y = h - 180
+        starty = current_y
+
+        line_length = 40
+        spacing = 30
+        amountToDraw = len(self.legendToDraw)
+        # ------------------------
+        # LIJNEN
+        # ------------------------
+
+        box_left = start_x - 15
+        box_right = start_x + line_length + 130
+        box_top = starty - 30
+        box_bottom = starty + (spacing * amountToDraw) - 10
+
+        # rechthoek
+        canvas.create_rectangle(
+            box_left,
+            box_top,
+            box_right,
+            box_bottom,
+            fill="#1e1e1e",
+            outline="black",
+            width=3,
+            tags="legend"
+        )
+
+        # ------------------------
+        # TITLE (Legenda bovenin gecentreerd)
+        # ------------------------
+
+        title_x = (box_left + box_right) / 2
+        title_y = box_top + 10
+
+        canvas.create_text(
+            title_x,
+            title_y,
+            text="Legenda",
+            fill="white",
+            font=("Arial", 10, "bold"),
+            tags="legend"
+        )
+
+        if NWBLine in self.legendToDraw:
+            color = NWBLineSettings[1]
+            width = NWBLineSettings[2]
+
+            canvas.create_line(
+                start_x,
+                current_y,
+                start_x + line_length,
+                current_y,
+                fill=color,
+                width=width,
+                tags="legend"
+            )
+
+            canvas.create_text(
+                start_x + line_length + 10,
+                current_y,
+                text="= Wegvak lijn",
+                anchor="w",
+                fill="white",
+                tags="legend"
+            )
+
+            current_y += spacing
+
+        if helpLine in self.legendToDraw:
+            color = helpLineSettings[1]
+            width = helpLineSettings[2]
+
+            canvas.create_line(
+                start_x,
+                current_y,
+                start_x + line_length,
+                current_y,
+                fill=color,
+                width=width,
+                tags="legend"
+            )
+
+            canvas.create_text(
+                start_x + line_length + 10,
+                current_y,
+                text="= Hulplijn berekening",
+                anchor="w",
+                fill="white",
+                tags="legend"
+            )
+
+            current_y += spacing
+
+        # ------------------------
+        # MARKERS
+        # ------------------------
+
+        if calcMarker in self.legendToDraw:
+
+            canvas.create_oval(
+                start_x,
+                current_y - 8,
+                start_x + 16,
+                current_y + 8,
+                fill="blue",
+                outline="black",
+                width=2,
+                tags="legend"
+            )
+
+            canvas.create_text(
+                start_x + 25,
+                current_y,
+                text="= Berekende posities",
+                anchor="w",
+                fill="white",
+                tags="legend"
+            )
+
+            current_y += spacing
+
+        if posMarker in self.legendToDraw:
+
+            canvas.create_oval(
+                start_x,
+                current_y - 8,
+                start_x + 16,
+                current_y + 8,
+                fill="red",
+                outline="black",
+                width=2,
+                tags="legend"
+            )
+
+            canvas.create_text(
+                start_x + 25,
+                current_y,
+                text="= Positie kegelrobot",
+                anchor="w",
+                fill="white",
+                tags="legend"
+            )
+
+            current_y += spacing
+
+        # redraw blijven doen
+        self.after(500, self.DrawLegend)
+
+
     def _pixels_to_meters(self, pixels):
         zoom = self.map_widget.zoom
         lat  = self.map_widget.get_position()[0]
@@ -380,6 +415,11 @@ class AppFrameMap(customtkinter.CTkFrame):
         if zoomInteger < ROAD_DRAW_ZOOM:
             self.map_widget.canvas.delete(self._ROAD_TAG)
             self.map_widget.canvas.delete(self._OFFSET_TAG)
+            try:
+                self.legendToDraw.discard(NWBLine)
+                self.legendToDraw.discard(helpLine)
+            except:
+                pass
             return
         bbox = self._get_viewport_bbox()
         if bbox is None:
@@ -506,6 +546,7 @@ class AppFrameMap(customtkinter.CTkFrame):
                 )
 
         canvas.tag_raise(self._ROAD_TAG)
+        self.legendToDraw.add(NWBLine)
 
     # ══════════════════════════════════════════════════════════════════════
     # Vluchtstrook parallel-offset overlay
@@ -627,6 +668,7 @@ class AppFrameMap(customtkinter.CTkFrame):
             )
 
         canvas.tag_raise(self._OFFSET_TAG)
+        self.legendToDraw.add(helpLine)
 
     def _snap_to_offset_polyline(self, lat, lon):
         """
@@ -647,9 +689,16 @@ class AppFrameMap(customtkinter.CTkFrame):
         self.addingMarker = True
         print("adding new marker:", coords)
         self.DeletePositions(markerText)
-        newMarker = self.map_widget.set_marker(coords[0], coords[1], text=markerText)
+        kwargs = {}
+        if "calculated" in markerText:
+            kwargs["marker_color_outside"] = marker_color_outside
+            kwargs["marker_color_circle"] = marker_color_circle
+            kwargs["text_color"] = marker_color_text
+            self.legendToDraw.add(calcMarker)
 
-        self.after(150, lambda: self.AddIncidentLocation(
+        newMarker = self.map_widget.set_marker(coords[0], coords[1], text=markerText, **kwargs)
+
+        self.after(15, lambda: self.AddIncidentLocation(
             self.geolocator.reverse(f"{coords[0]}, {coords[1]}")))
 
         self.markersDict[newMarker] = markerText
@@ -657,16 +706,19 @@ class AppFrameMap(customtkinter.CTkFrame):
         self.marker_lines[newMarker] = [markerText, direction]
         self.addingMarker = False
         self.DrawMarkerLines()
+        self.legendToDraw.add(posMarker)
 
     def CalculateButtonPressed(self):
         testModeVar = self.testPositionModeVar.get()
         if not self.markersDict:
             print("geen markers om op te berekenen")
             return
+        robotNames = self.getRobotNames()
+        #print("RObot namen zijn, ", robotNames)
         if testModeVar == "1":
             self.CalculatePositions(distance=5, amount=1, motherBotPos=1)
         else:
-            self.popupWindow.pop_up()
+            self.popupWindow.pop_up(listOfRobotNames=robotNames)
             #self.pop_up(["robot1", "robot2"], self.AfterPopUpToCalculate)
 
     def CalculatePositions(self, distance=10, amount=1, motherBotPos=1):
@@ -709,28 +761,6 @@ class AppFrameMap(customtkinter.CTkFrame):
         # Herteken de vluchtstrook overlay
         self._draw_offset_roads()
 
-    def calculate_destination(self, lat, lon, bearing, distanceFirst, posList):
-        """Behouden voor eventueel ander gebruik; wordt niet meer aangeroepen vanuit CalculatePositions."""
-        R     = 6371000
-        lat1  = math.radians(lat)
-        lon1  = math.radians(lon)
-        theta = math.radians(bearing)
-        for i in range(1, len(posList) + 1):
-            distance = distanceFirst * i
-            delta    = distance / R
-            lat2     = math.asin(
-                math.sin(lat1) * math.cos(delta) +
-                math.cos(lat1) * math.sin(delta) * math.cos(theta)
-            )
-            lon2 = lon1 + math.atan2(
-                math.sin(theta) * math.sin(delta) * math.cos(lat1),
-                math.cos(delta) - math.sin(lat1) * math.sin(lat2)
-            )
-            posList[i - 1] = [math.degrees(lat2), math.degrees(lon2)]
-
-    def NormalisePositionDegreeValues(self, degrees, situation):
-        if situation == 1 and degrees is not None:
-            return degrees + 90
 
     def DeletePositions(self, nameToDelete="calculated"):
         for key in [k for k, v in self.markersDict.items() if nameToDelete in v]:
@@ -739,12 +769,15 @@ class AppFrameMap(customtkinter.CTkFrame):
         for key in [k for k, v in self.marker_lines.items() if nameToDelete in v[0]]:
             self.map_widget.canvas.delete(self.marker_lines[key][0])
             del self.marker_lines[key]
+        try:
+            self.legendToDraw.discard(calcMarker)
+        except:
+            pass
 
     def DeletePositionsButtonPressed(self):
         canvas = self.map_widget.canvas
         canvas.delete(self._OFFSET_TAG)
         self._offset_polyline_single = None   # ← reset de enkele offset-lijn
-        self._offset_polylines       = []
         self.DeletePositions()
 
     def SendMessagesToRobots(self, robotName=None, msgField=None, msg=None):
@@ -843,6 +876,8 @@ class AppFrameMap(customtkinter.CTkFrame):
             canvas = self.map_widget.canvas
             canvas.delete(self._OFFSET_TAG)
             self._offset_polyline_single = None
-            self._offset_polylines       = []
+            self.legendToDraw.discard(posMarker)
+            self.legendToDraw.discard(calcMarker)
+            self.legendToDraw.discard(helpLine)
         except Exception as e:
             print("error hier is = ", e)

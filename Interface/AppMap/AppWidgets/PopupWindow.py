@@ -9,11 +9,12 @@ CROW_SPACING_M = 10.0         # onderlinge afstand kegels in meters
 ROBOT_RADIUS   = 6            # visuele straal van robot-cirkel in canvas px
 
 
-class PopupWindow(customtkinter.CTkToplevel):
+class PopupWindow:
     def __init__(self, master, callbackValues):
         self.master = master
         self.afterPopupCallback = callbackValues
         self.amountOfRobots = None
+        self.optionformation = None
 
     def pop_up(self, listOfRobotNames=None):
         if listOfRobotNames is None:
@@ -29,7 +30,9 @@ class PopupWindow(customtkinter.CTkToplevel):
 
         popup = customtkinter.CTkToplevel(self.master)
         popup.title("Instellingen voor berekeningen")
-        popup.wm_maxsize(900, 700)
+        #popup.wm_maxsize(1300, 700)
+        #popup.wm_minsize(600,600)
+        popup.geometry("900x300")
         popup.wm_resizable(False, False)
         popup.wm_transient(self.master)
         popup.configure(fg_color="white")
@@ -66,12 +69,12 @@ class PopupWindow(customtkinter.CTkToplevel):
 
             # ── wegbalk ───────────────────────────────────────────────────
             canvas.create_rectangle(
-                0, road_y - 18, preview_w, road_y + 18,
+                0, road_y - 55, preview_w, road_y + 18,
                 fill="#E8E4D9", outline="", tags="road",
             )
             canvas.create_line(
-                0, road_y, preview_w, road_y,
-                fill="#B8B4A5", width=1, dash=(6, 4),
+                0, road_y-45, preview_w, road_y-45,
+                fill="white", width=4
             )
 
             # ── afstandslabel tussen eerste twee kegels ───────────────────
@@ -139,7 +142,7 @@ class PopupWindow(customtkinter.CTkToplevel):
                                        fill="#2563EB", font=("Arial", 8))
 
             # ── legenda ───────────────────────────────────────────────────
-            leg_y = preview_h - 80
+            leg_y = preview_h - 140
             # huidige robot
             canvas.create_oval(8, leg_y - 6, 20, leg_y + 6,
                                fill="#2563EB", outline="#1D4ED8")
@@ -162,14 +165,20 @@ class PopupWindow(customtkinter.CTkToplevel):
                                anchor="w", fill="#111", font=("Arial", 11, "bold"))
 
             self.errorMsgAmountRobot = canvas.create_text(8, leg_y + 50,
-                        text=f"Meer kegels geselecteerd te berekenen dan online:\n{aantalTotaal} totale posities, maar alleen {self.amountOfRobots} kegelrobots online",
+                        text=f"Waarschuwing: {aantalTotaal} totale posities, maar alleen {self.amountOfRobots} kegelrobots online.",
                         anchor="w", fill="red", font=("Arial", 11, "bold"), state="hidden")
+
+            self.errorMsgFormationAmountRobots = canvas.create_text(8, leg_y + 90,
+                        text=f"Waarschuwing: kan geen CROW-formatie selecteren als \ntotaal aantal postities kleiner dan 5 is.",
+                        anchor="w", fill="red", font=("Arial", 11, "bold"), state="hidden")
+
+
                         
 
         # ── callback helpers ───────────────────────────────────────────────
         def change_val(value):
             try:
-                int(value)
+                value = int(value)
                 chosenSettings["Aantal"] = value
                 _redraw_preview()
                 if (int(value) + 1) > self.amountOfRobots:
@@ -181,6 +190,14 @@ class PopupWindow(customtkinter.CTkToplevel):
                 pass
                 
         def changeFormation(formation):
+            try:
+                if "CROW" in formation and ((chosenSettings["Aantal"] + 1) < 5):
+                    canvas.itemconfig(self.errorMsgFormationAmountRobots, state="normal")
+                    self.optionformation.set("Standaard 10m afstand")
+                else:
+                    canvas.itemconfig(self.errorMsgFormationAmountRobots, state="hidden")
+            except:
+                pass
             chosenSettings["Formatie"] = formation
 
         def changeStartRobot(robotName):
@@ -224,11 +241,14 @@ class PopupWindow(customtkinter.CTkToplevel):
             text="Welke formatie moet er toegepast worden:",
             anchor="w"
         ).grid(row=0, column=0, padx=10, pady=(6, 0), sticky="nw")
-        customtkinter.CTkOptionMenu(
+        self.optionformation = customtkinter.CTkOptionMenu(
             frame_formation,
-            values=["Standaard 10m afstand"],
+            values=["Standaard 10m afstand", "CROW-formatie"],
             command=changeFormation,
-        ).grid(row=1, column=0, padx=10, pady=(0, 8), sticky="nw")
+        )
+        self.optionformation.grid(row=1, column=0, padx=10, pady=(0, 8), sticky="nw")
+        
+        
 
         # # Robot
         # frame_robot = customtkinter.CTkFrame(options_frame)
@@ -265,7 +285,7 @@ class PopupWindow(customtkinter.CTkToplevel):
         ).pack(pady=(8, 2))
 
         import tkinter as tk
-        preview_w, preview_h = 440, 190
+        preview_w, preview_h = 650, 280
         canvas = tk.Canvas(preview_frame,
                            width=preview_w, height=preview_h,
                            bg="#F8F7F2", highlightthickness=0)

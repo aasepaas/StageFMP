@@ -32,8 +32,20 @@ if __name__ == "__main__":
         pass
 
     MQTTClient1.listen_for_messages()
+    sleep(0.1)
+
     sleep(1.1)
+
+    MQTTClient1.send_message(f"Robots/TestNaCRL18-05v1/status", "message random", qos=1)
+    MQTTClient1.send_message(f"Commands/TestNaCRL18-05v1/MoveTo", "message random", qos=1)
+
+    MQTTClient1.send_message(f"Robots/geenRobot1/status", "message random", qos=1)
+    MQTTClient1.send_message(f"Commands/geenRobot1/MoveTo", "message random", qos=1)
+
+    MQTTClient1.subscribe_to_topic("ajdajsdjaskd/#", qos=1)
+
     MQTTClient1.subscribe_to_topic("Robots/#", qos=1)
+
 
 
 

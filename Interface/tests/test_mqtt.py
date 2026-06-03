@@ -6,12 +6,9 @@ from MQTTClient import MQTTClient
 import unittest
 from unittest.mock import MagicMock, patch, mock_open, call
 import ssl
-from cryptography import x509
-from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.asymmetric import rsa
+
 from datetime import datetime, timedelta
-from MQTTClient import MQTTClient, MAX_PAYLOAD
+from MQTTClient import MQTTClient
 
 
 class TestMQTTClient(unittest.TestCase):
@@ -463,7 +460,7 @@ class TestMQTTClient(unittest.TestCase):
         
         self.assertFalse(client.connectionStatus())
 
-   #-----tests met crll--------------
+
 
 
 

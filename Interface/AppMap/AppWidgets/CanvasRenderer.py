@@ -4,7 +4,6 @@ import customtkinter
 
 class CanvasRenderer:
     """Handles all canvas drawing operations (scale, legend, roads)."""
-    
     def __init__(self, map_widget):
         self.map_widget = map_widget
         self.canvas = map_widget.canvas
@@ -29,7 +28,7 @@ class CanvasRenderer:
         return True
     
     def draw_legend(self, legend_items, legend_config):
-        """Draw legend with specified items."""
+        """Draw legend with specified items, such as markers and lines."""
         self.canvas.delete("legend")
         w, h = self.map_widget.winfo_width(), self.map_widget.winfo_height()
         
@@ -125,8 +124,8 @@ class CanvasRenderer:
                 try:
                     cx, cy = self._latlon_to_canvas(lat, lon)
                     pts.extend([cx, cy])
-                except Exception:
-                    pass
+                except Exception as e:
+                    print("EXCEPTION: ", e)
             
             if len(pts) >= 4:
                 self.canvas.create_line(
@@ -150,7 +149,8 @@ class CanvasRenderer:
                 fill="green", width=5, tags=tag, arrow=customtkinter.LAST
             )
             return True
-        except Exception:
+        except Exception as e:
+            print("EXCEPTION: ", e)
             return False
     
     def clear_canvas_tag(self, tag):

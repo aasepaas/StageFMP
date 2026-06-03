@@ -10,6 +10,7 @@ ROBOT_RADIUS   = 6            # visuele straal van robot-cirkel in canvas px
 
 
 class PopupWindow:
+    """Popup window to select settings for the formation calculation of the cones/robots"""
     def __init__(self, master, callbackValues):
         self.master = master
         self.afterPopupCallback = callbackValues
@@ -41,7 +42,8 @@ class PopupWindow:
         def _robot_index(robot_name: str, robot_list: list) -> int:
             try:
                 return robot_list.index(robot_name)
-            except ValueError:
+            except Exception as e:
+                print("EXCEPTION: ", e)
                 return 0
 
         # ── inner helpers ──────────────────────────────────────────────────
@@ -186,8 +188,8 @@ class PopupWindow:
                 else:
                     canvas.itemconfig(self.errorMsgAmountRobot, state="hidden")
                     
-            except Exception:
-                pass
+            except Exception as e:
+                print("EXCEPTION: ", e)
                 
         def changeFormation(formation):
             try:
@@ -196,8 +198,8 @@ class PopupWindow:
                     self.optionformation.set("Standaard 10m afstand")
                 else:
                     canvas.itemconfig(self.errorMsgFormationAmountRobots, state="hidden")
-            except:
-                pass
+            except Exception as e:
+                print("EXCEPTION: ", e)
             chosenSettings["Formatie"] = formation
 
         def changeStartRobot(robotName):
@@ -299,5 +301,6 @@ class PopupWindow:
     def _robot_index_static(robot_name, robot_list):
         try:
             return robot_list.index(robot_name)
-        except ValueError:
+        except Exception as e:
+            print("EXCEPTION: ", e)
             return 0

@@ -8,6 +8,7 @@ from AppMap.AppWidgets.Robot import Robot
 
 
 class AppFrameRobots(customtkinter.CTkFrame):
+    """Frame for controlling the list and robots"""
     def __init__(self, master):
         super().__init__(master)
         self.app = master
@@ -104,7 +105,8 @@ class AppFrameRobots(customtkinter.CTkFrame):
     def IsFLoat(self, value):
         try:
             return float(value)
-        except ValueError:
+        except Exception as e:
+            print("EXCEPTION: ", e)
             return False
 
     def IsDirection(self, direction):

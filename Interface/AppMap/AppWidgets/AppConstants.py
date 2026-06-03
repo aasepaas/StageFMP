@@ -1,4 +1,4 @@
-"""Constants used throughout the AppMap module."""
+"""Constants used throughout the AppMap files."""
 
 ARROWLENGTH = 50
 PDOK_WFS_URL = "https://service.pdok.nl/rws/nationaal-wegenbestand-wegen/wfs/v1_0"

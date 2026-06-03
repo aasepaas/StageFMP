@@ -1,14 +1,8 @@
 ﻿#from mainInterface import App
-from calendar import setfirstweekday
-from sqlite3 import SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE
-from token import COMMA
-from AppMap import app
-from time import sleep
-import customtkinter as ctk
 
+from AppMap import App
+from time import sleep
 from MQTTClient import MQTTClient  
-from customLogger import customLogger
-import math
 import sys
 from testrun import run_all_tests
 
@@ -27,9 +21,9 @@ if __name__ == "__main__":
        print(f"Bericht ontvangen op '{topic}': {bericht}")
 
     MQTTClient1 = MQTTClient("localhost", 8883, "GUI", ca_certs, certfile, keyfile)
-    app = app(MQTTClient1)
+    App = App(MQTTClient1)
 
-    MQTTClient1.SetMessageHandler(app.MessageHandler)
+    MQTTClient1.SetMessageHandler(App.MessageHandler)
     MQTTClient1.connectToBroker()
     while not MQTTClient1.connectionStatus():
         pass
@@ -52,4 +46,4 @@ if __name__ == "__main__":
 
 
 
-    app.startGUI()
+    App.startGUI()

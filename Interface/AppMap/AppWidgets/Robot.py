@@ -1,4 +1,5 @@
 class Robot:
+    """Managaes singular robot data such as status adn"""
     def __init__(self, name):
         self.name = name
         self.currentPosition = []

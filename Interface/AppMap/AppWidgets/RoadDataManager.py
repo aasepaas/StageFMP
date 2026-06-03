@@ -41,8 +41,8 @@ class RoadDataManager:
             self.road_polylines = polylines
             self.road_fetch_bbox = bbox
         
-        except Exception as exc:
-            print(f"[NWB WFS] fout: {exc}")
+        except Exception as e:
+            print(f"EXCEPTION: [NWB WFS] fout: {e}")
         
         finally:
             self.road_fetch_running = False

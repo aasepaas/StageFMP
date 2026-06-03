@@ -3,7 +3,7 @@ from AppMap.AppWidgets.UIBuilder import UIBuilder
 
 
 class LocationManager:
-    """Manages geolocation and incident location display."""
+    """Manages lat,lon to address and displays incident location."""
     
     def __init__(self):
         self.geolocator = Nominatim(user_agent="my_app")

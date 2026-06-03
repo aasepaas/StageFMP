@@ -16,7 +16,7 @@ MAXHEIGHT = 1080
 APPNAME = "Kegelrobots besturingsapp"
 
 
-class app(customtkinter.CTk):
+class App(customtkinter.CTk):
     _instance = None
     ##singleton zodat er niet perongeluk meerdere interfaces gemaakt kunnen worden
     def __new__(cls, *args, **kwargs):
@@ -60,7 +60,7 @@ class app(customtkinter.CTk):
     # def GetRobotNames(self):
     #     robotNames = self.robotViewer.GetRobotNames()
     #     print("Robotnamen zijn: ", robotNames)
-
+    
     def makeNewMarker(self, markerToBePlaced):
         print("makeNewMarker van app")
         coords = [markerToBePlaced[1], markerToBePlaced[2]]
@@ -101,7 +101,7 @@ class app(customtkinter.CTk):
         try:
             self.mapViewer.Reset()
             self.robotViewer.Reset()
-        except:
-            pass
+        except Exception as e:
+            print("EXCEPTION: ", e)
 
 

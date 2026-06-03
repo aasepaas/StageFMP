@@ -13,8 +13,8 @@ def to_num(s):
         return NL_NUMS[s]
     try:
         return float(s)
-    except ValueError:
-        return None
+    except Exception as e:
+        print("EXCEPTION: ", e)
 
 def parse_input(raw: str) -> str:
     s = raw.lower().replace(',', ' ')

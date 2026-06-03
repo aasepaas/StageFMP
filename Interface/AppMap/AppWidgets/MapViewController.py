@@ -36,7 +36,8 @@ class MapViewController:
         try:
             lat_nw, lon_nw = self.map_widget.convert_canvas_coords_to_decimal_coords(0, 0)
             lat_se, lon_se = self.map_widget.convert_canvas_coords_to_decimal_coords(w, h)
-        except Exception:
+        except Exception as e:
+            print("EXCEPTION: ", e)
             return None
         
         return (min(lat_nw, lat_se), min(lon_nw, lon_se),

@@ -225,8 +225,8 @@ class AppFrameMap(customtkinter.CTkFrame):
         
         try:
             self.legend_to_draw.discard(calcMarker)
-        except:
-            pass
+        except Exception as e:
+            print("EXCEPTION: ", e)
     
     def DeletePositionsButtonPressed(self):
         """Handle delete positions button press."""
@@ -374,8 +374,8 @@ class AppFrameMap(customtkinter.CTkFrame):
         amount = 1
         try:
             amount = int(chosenSettings["Aantal"])
-        except Exception:
-            pass
+        except Exception as e:
+            print("EXCEPTION: ", e)
         
         formation = chosenSettings["Formatie"]
         start_robot = chosenSettings["RobotStart"]
@@ -398,4 +398,4 @@ class AppFrameMap(customtkinter.CTkFrame):
             self.legend_to_draw.discard(calcMarker)
             self.legend_to_draw.discard(helpLine)
         except Exception as e:
-            print(f"error hier is = {e}")
+            print("EXCEPTION: ", e)

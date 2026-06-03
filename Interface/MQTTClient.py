@@ -4,7 +4,6 @@ from paho.mqtt import client as mqtt_client
 
 from virtualMQTTClient import VirtualMQTTclient
 
-from customLogger import customLogger
 
 class MQTTClient(VirtualMQTTclient):
     _instance = None

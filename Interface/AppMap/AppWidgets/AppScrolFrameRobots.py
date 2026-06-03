@@ -5,6 +5,7 @@ from PIL import Image, ImageDraw
 import os
 
 class AppScrolFrameRobots(customtkinter.CTkScrollableFrame):
+    """Frame that contains the list of robots self that is shown on the UI."""
     def __init__(self, master):
         super().__init__(master)
         self.currentRow = 0

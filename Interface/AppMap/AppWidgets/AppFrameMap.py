@@ -1,883 +1,401 @@
 ﻿import customtkinter
-from tkintermapview import TkinterMapView
-import math
 import threading
-import requests
-from geopy.geocoders import Nominatim
+from AppMap.AppWidgets.CanvasRenderer import CanvasRenderer
+from AppMap.AppWidgets.MarkerManager import MarkerManager
+from AppMap.AppWidgets.RoadDataManager import RoadDataManager
+from AppMap.AppWidgets.OffsetPolylineManager import OffsetPolylineManager
+from AppMap.AppWidgets.PositionCalculator import PositionCalculator
+from AppMap.AppWidgets.MapViewController import MapViewController
+from AppMap.AppWidgets.UIBuilder import UIBuilder
+from AppMap.AppWidgets.LocationManager import LocationManager
 from AppMap.AppWidgets.PopupWindow import PopupWindow
-from AppMap.AppWidgets.FormationCalculator import _latlon_to_local_xy, offset_polyline, _project_onto_polyline, _point_along_polyline
-
-
-ARROWLENGTH    = 50
-PDOK_WFS_URL   = "https://service.pdok.nl/rws/nationaal-wegenbestand-wegen/wfs/v1_0"
-ROAD_DRAW_ZOOM = 18
-marker_color_outside = "#4194f2" #1
-marker_color_circle = "#0c509c" #2
-marker_color_text = "#043469" #3
-NWBLineSettings = {1: "#FFD700", 2: 5}
-helpLineSettings = {1:"#FF6600", 2:5}
-NWBLine = "NWBLine"
-helpLine = "helpLine"
-posMarker = "posMarker"
-calcMarker = "calcMarker"
+from AppMap.AppWidgets.AppConstants import (
+    marker_color_outside, marker_color_circle, marker_color_text,
+    NWBLineSettings, helpLineSettings, NWBLine, helpLine,
+    posMarker, calcMarker, ROAD_DRAW_ZOOM
+)
 
 
 class AppFrameMap(customtkinter.CTkFrame):
+    """Main frame coordinating map, markers, roads, and UI."""
+    
     def __init__(self, master, sendCallback, resetCallback, getRobotNames):
         super().__init__(master)
-
+        
         self.sendMessageCallback = sendCallback
         self.resetInterface = resetCallback
         self.getRobotNames = getRobotNames
-
+        
+        # Configure grid
         self.grid_columnconfigure(1, weight=1)
         self.grid_rowconfigure(0, weight=0)
         self.grid_rowconfigure(1, weight=14)
         self.grid_rowconfigure(2, weight=0)
-
-        # ── Map widget ────────────────────────────────────────────────────
-        self.map_widget = TkinterMapView(self, corner_radius=5, database_path="map_tiles.db")
-        self.map_widget.grid(row=1, column=0, columnspan=3, sticky="nswe",
-                             padx=(10, 10), pady=(0, 0))
-
+        
+        # Initialize managers and controllers
+        self.map_widget = UIBuilder.create_map_widget(self)
+        self.map_view_controller = MapViewController(self.map_widget)
+        self.canvas_renderer = CanvasRenderer(self.map_widget)
+        self.marker_manager = MarkerManager(self.map_widget)
+        self.road_data_manager = RoadDataManager()
+        self.offset_polyline_manager = OffsetPolylineManager()
+        self.location_manager = LocationManager()
+        
+        # UI State
+        self.adding_marker = False
+        self.legend_to_draw = set()
+        self.road_refresh_job = None
+        
+        # Constants
+        self._ROAD_TAG = "nwb_roads"
+        self._OFFSET_TAG = "vlucht_strook_roads"
+        self.ROAD_DRAW_ZOOM = ROAD_DRAW_ZOOM
+        
+        # Legend configuration
+        self.legend_config = {
+            "NWBLine": NWBLine,
+            "helpLine": helpLine,
+            "calcMarker": calcMarker,
+            "posMarker": posMarker,
+            "NWBLineSettings": NWBLineSettings,
+            "helpLineSettings": helpLineSettings
+        }
+        
+        self._setup_ui()
+        self._setup_map()
+        self._bind_events()
+        
+        # Popup window
+        self.popupWindow = PopupWindow(self, self.AfterPopUpToCalculate)
+    
+    def _setup_ui(self):
+        """Set up UI components."""
+        # Title label
         self.label = customtkinter.CTkLabel(
             self, text="Map:", fg_color='#01a6f8',
             width=100, height=20, font=('Bold', 28), corner_radius=5
         )
         self.label.grid(row=0, column=0, sticky="nw", padx=(8, 8), pady=(5, 5))
-
-        self.map_widget.bind("<MouseWheel>", self._on_scroll)
-        self.map_widget.canvas.bind("<MouseWheel>", self._on_scroll, add="+")
-
-        # ── Tile server control ───────────────────────────────────────────
-        self.control_frame = customtkinter.CTkFrame(self)
-        self.control_frame.grid(row=2, column=0, sticky="nw", padx=10, pady=10)
-
-        customtkinter.CTkLabel(self.control_frame, text="Soort map:", anchor="w").grid(
-            row=0, column=0, padx=10, pady=(5, 0), sticky="nw")
-
-        self.map_option_menu = customtkinter.CTkOptionMenu(
-            self.control_frame,
-            values=["Map normaal", "Map satelliet"],
-            command=self.change_map
+        
+        # Map widget
+        self.map_widget.grid(row=1, column=0, columnspan=3, sticky="nswe",
+                            padx=(10, 10), pady=(0, 0))
+        
+        # Control frame
+        self.control_frame, self.map_option_menu = UIBuilder.create_control_frame(
+            self, self.change_map
         )
-        self.map_option_menu.grid(row=2, column=0, padx=10, pady=(0, 5), sticky="nw")
-
-        customtkinter.CTkLabel(self.control_frame, text="Reset scherm:", anchor="w").grid(
-            row=4, column=0, padx=10, pady=(5, 0), sticky="nw")
-
+        self.control_frame.grid(row=2, column=0, sticky="nw", padx=10, pady=10)
+        
         customtkinter.CTkButton(
             self.control_frame, text="Reset",
-            command=self.ResetButtonPressed, border_color="black", border_width=2, fg_color="red"
-        ).grid(row=5, column=0, padx=10, pady=(0,5), sticky="nw")
-
-        #---Initial map settings------------
-        self.map_widget.set_tile_server(
-            "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-            max_zoom=21
-        )
+            command=self.ResetButtonPressed, border_color="black", 
+            border_width=2, fg_color="red"
+        ).grid(row=5, column=0, padx=10, pady=(0, 5), sticky="nw")
+        
+        # Position buttons frame
+        self.controlFramePositionButtons, self.testPositionModeVar = \
+            UIBuilder.create_position_buttons_frame(
+                self,
+                calculate_callback=self.CalculateButtonPressed,
+                delete_callback=self.DeletePositionsButtonPressed,
+                send_callback=self.SendMessagesToRobots,
+                switch_test_callback=self.switchTest
+            )
+        self.controlFramePositionButtons.grid(row=2, column=1, columnspan=2, 
+                                             sticky="nwse", padx=10, pady=10)
+    
+    def _setup_map(self):
+        """Set up initial map settings."""
+        self.map_view_controller.set_tile_server("Map satelliet")
         self.map_widget.set_position(52.0172355, 4.3712940)
         self.map_option_menu.set("Map satelliet")
-        self.MAX_ZOOM = 21
-
+        
         self.after(500, self._draw_scale)
         self.after(500, self.DrawLegend)
-
+    
+    def _bind_events(self):
+        """Bind event handlers."""
         self.map_widget.add_right_click_menu_command(
-            label="Add Marker", command=self.AddMarker, pass_coords=True)
-
-        # ── Positie-knoppen ────────────────────────────────────────────────
-        self.controlFramePositionButtons = customtkinter.CTkFrame(self)
-        self.controlFramePositionButtons.grid(row=2, column=1, columnspan=2, sticky="nwse", padx=10, pady=10)
-
-        customtkinter.CTkButton(
-            self.controlFramePositionButtons, text="Bereken overige posities",
-            command=self.CalculateButtonPressed, border_color="black", border_width=2
-        ).grid(row=0, column=0, padx=10, pady=10, sticky="nw")
-
-        self.testPositionModeVar = customtkinter.StringVar(value=False)
-        customtkinter.CTkSwitch(
-            self.controlFramePositionButtons, text="Test mode", variable=self.testPositionModeVar,
-            onvalue=True, offvalue=False,
-            border_color="black", border_width=2, command=self.switchTest
-        ).grid(row=1, column=0, padx=10, pady=10, sticky="nw")
-
-        customtkinter.CTkButton(
-            self.controlFramePositionButtons, text="Verwijder berekende coordinaten",
-            command=self.DeletePositionsButtonPressed, border_color="black", border_width=2, fg_color="red"
-        ).grid(row=0, column=1, padx=10, pady=10, sticky="nw")
-
-        customtkinter.CTkButton(
-            self.controlFramePositionButtons, text="Stuur posities naar robots",
-            command=self.SendMessagesToRobots, border_color="black", border_width=2, fg_color="green"
-        ).grid(row=0, column=2, padx=10, pady=10, sticky="nw")
-
-        # ── Marker state ───────────────────────────────────────────────────
-        self.markersDict  = {}
-        self.marker_lines = {}
-        self.addingMarker = False
-
+            label="Add Marker", command=self.AddMarker, pass_coords=True
+        )
+        
+        self.map_widget.bind("<MouseWheel>", self._on_scroll)
+        self.map_widget.canvas.bind("<MouseWheel>", self._on_scroll, add="+")
+        
         self.map_widget.canvas.bind("<ButtonRelease-1>", self._on_pan_end, add="+")
-        self.map_widget.canvas.bind("<B1-Motion>",       self._on_pan_end, add="+")
-        self.map_widget.canvas.bind("<Button-1>",        self._on_pan_end, add="+")
-
-        # ── Road overlay state ─────────────────────────────────────────────
-        self._ROAD_TAG           = "nwb_roads"
-        self._OFFSET_TAG         = "vluchtstrook_roads"
-        self._road_polylines     = []
-        self._road_fetch_bbox    = None
-        self._road_refresh_job   = None
-        self._road_fetch_running = False
-        self.geolocator          = Nominatim(user_agent="my_app")
-
-        # ── Vluchtstrook state ─────────────────────────────────────────────
-        # Slechts ÉÉN verschoven polyline — de dichtstbijzijnde NWB-lijn
-        # verschoven zodat hij door de marker gaat.
-        self._offset_polyline_single = None   # list of (lat, lon)  ← nieuw
-        self.incidentFrame = None
-        self.legendToDraw = set()
-
-        self.popupWindow = PopupWindow(self, self.AfterPopUpToCalculate)
-
-
-    # ══════════════════════════════════════════════════════════════════════
-    # Map controls
-    # ══════════════════════════════════════════════════════════════════════
-
-    def switchTest(self):
-        print(self.testPositionModeVar.get())
-
+        self.map_widget.canvas.bind("<B1-Motion>", self._on_pan_end, add="+")
+        self.map_widget.canvas.bind("<Button-1>", self._on_pan_end, add="+")
+    
+    # ── Map control events ────────────────────────────────────────────────
+    
     def change_map(self, new_map: str):
-        if new_map == "Map normaal":
-            self.MAX_ZOOM = 20
-            self.map_widget.set_tile_server(
-                "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}",
-                max_zoom=20)
-        elif new_map == "Map satelliet":
-            self.MAX_ZOOM = 21
-            self.map_widget.set_tile_server(
-                "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-                max_zoom=21)
-
+        """Change map tile type."""
+        self.map_view_controller.set_tile_server(new_map)
+    
     def _on_scroll(self, event=None):
+        """Handle scroll (zoom) events."""
         self.after(50, self._enforce_zoom)
         self.after(70, self._redraw_all)
         self._schedule_road_refresh()
-
+    
     def _on_pan_end(self, event=None):
+        """Handle pan events."""
         self.after(70, self._redraw_all)
         self._schedule_road_refresh()
-
+    
     def _enforce_zoom(self):
-        if self.map_widget.zoom > self.MAX_ZOOM:
-            self.map_widget.set_zoom(self.MAX_ZOOM)
-
+        """Enforce maximum zoom level."""
+        self.map_view_controller.enforce_zoom()
+    
     def _redraw_all(self):
-        """Herteken pijlen, weglijnen en vluchtstrook-overlay na pan/zoom."""
-        self.DrawMarkerLines()
+        """Redraw all overlays."""
+        self._draw_marker_arrows()
         self._draw_cached_roads()
         self._draw_offset_roads()
-
-    # ══════════════════════════════════════════════════════════════════════
-    # Scale bar
-    # ══════════════════════════════════════════════════════════════════════
-
+    
+    # ── Scale and legend ──────────────────────────────────────────────────
+    
     def _draw_scale(self):
-        canvas = self.map_widget.canvas
-        canvas.delete("scale")
-        w, h = self.map_widget.winfo_width(), self.map_widget.winfo_height()
-        if w < 10 or h < 10:
+        """Draw scale bar."""
+        if self.canvas_renderer.draw_scale():
+            self.after(500, self._draw_scale)
+        else:
             self.after(200, self._draw_scale)
-            return
-        x1, y1, x2, y2 = 20, h - 30, 120, h - 30
-        meters = self._pixels_to_meters(100)
-        canvas.create_line(x1, y1, x2, y2, fill="white", width=3, tags="scale")
-        canvas.create_line(x1, y1 - 5, x1, y1 + 5, fill="white", width=3, tags="scale")
-        canvas.create_line(x2, y2 - 5, x2, y2 + 5, fill="white", width=3, tags="scale")
-        canvas.create_text((x1 + x2) // 2, y1 - 10, text=f"{meters:.0f} m",
-                           fill="white", font=("Arial", 10, "bold"), tags="scale")
-        self.after(500, self._draw_scale)
-
-
+    
     def DrawLegend(self):
-        canvas = self.map_widget.canvas
-
-        # verwijder oude legenda
-        canvas.delete("legend")
-
-        w = self.map_widget.winfo_width()
-        h = self.map_widget.winfo_height()
-
-        # widget nog niet geladen
-        if w < 10 or h < 10:
-            self.after(200, self.DrawLegend)
-            return
-
-        # niets tekenen
-        if not self.legendToDraw:
+        """Draw legend."""
+        if self.canvas_renderer.draw_legend(self.legend_to_draw, self.legend_config):
             self.after(500, self.DrawLegend)
+        elif not self.legend_to_draw:
+            self.after(500, self.DrawLegend)
+        else:
+            self.after(200, self.DrawLegend)
+    
+    # ── Marker management ─────────────────────────────────────────────────
+    
+    def _draw_marker_arrows(self):
+        """Draw direction arrows for markers."""
+        if self.adding_marker:
             return
-
-
-        # beginpositie legenda
-        start_x = 20
-        current_y = h - 180
-        starty = current_y
-
-        line_length = 40
-        spacing = 30
-        amountToDraw = len(self.legendToDraw)
-        # ------------------------
-        # LIJNEN
-        # ------------------------
-
-        box_left = start_x - 15
-        box_right = start_x + line_length + 130
-        box_top = starty - 30
-        box_bottom = starty + (spacing * amountToDraw) - 10
-
-        # rechthoek
-        canvas.create_rectangle(
-            box_left,
-            box_top,
-            box_right,
-            box_bottom,
-            fill="#1e1e1e",
-            outline="black",
-            width=3,
-            tags="legend"
-        )
-
-        # ------------------------
-        # TITLE (Legenda bovenin gecentreerd)
-        # ------------------------
-
-        title_x = (box_left + box_right) / 2
-        title_y = box_top + 10
-
-        canvas.create_text(
-            title_x,
-            title_y,
-            text="Legenda",
-            fill="white",
-            font=("Arial", 10, "bold"),
-            tags="legend"
-        )
-
-        if NWBLine in self.legendToDraw:
-            color = NWBLineSettings[1]
-            width = NWBLineSettings[2]
-
-            canvas.create_line(
-                start_x,
-                current_y,
-                start_x + line_length,
-                current_y,
-                fill=color,
-                width=width,
-                tags="legend"
-            )
-
-            canvas.create_text(
-                start_x + line_length + 10,
-                current_y,
-                text="= Wegvak lijn",
-                anchor="w",
-                fill="white",
-                tags="legend"
-            )
-
-            current_y += spacing
-
-        if helpLine in self.legendToDraw:
-            color = helpLineSettings[1]
-            width = helpLineSettings[2]
-
-            canvas.create_line(
-                start_x,
-                current_y,
-                start_x + line_length,
-                current_y,
-                fill=color,
-                width=width,
-                tags="legend"
-            )
-
-            canvas.create_text(
-                start_x + line_length + 10,
-                current_y,
-                text="= Hulplijn berekening",
-                anchor="w",
-                fill="white",
-                tags="legend"
-            )
-
-            current_y += spacing
-
-        # ------------------------
-        # MARKERS
-        # ------------------------
-
-        if calcMarker in self.legendToDraw:
-
-            canvas.create_oval(
-                start_x,
-                current_y - 8,
-                start_x + 16,
-                current_y + 8,
-                fill="blue",
-                outline="black",
-                width=2,
-                tags="legend"
-            )
-
-            canvas.create_text(
-                start_x + 25,
-                current_y,
-                text="= Berekende posities",
-                anchor="w",
-                fill="white",
-                tags="legend"
-            )
-
-            current_y += spacing
-
-        if posMarker in self.legendToDraw:
-
-            canvas.create_oval(
-                start_x,
-                current_y - 8,
-                start_x + 16,
-                current_y + 8,
-                fill="red",
-                outline="black",
-                width=2,
-                tags="legend"
-            )
-
-            canvas.create_text(
-                start_x + 25,
-                current_y,
-                text="= Positie kegelrobot",
-                anchor="w",
-                fill="white",
-                tags="legend"
-            )
-
-            current_y += spacing
-
-        # redraw blijven doen
-        self.after(500, self.DrawLegend)
-
-
-    def _pixels_to_meters(self, pixels):
-        zoom = self.map_widget.zoom
-        lat  = self.map_widget.get_position()[0]
-        return pixels * (156543.03 * math.cos(math.radians(lat))) / (2 ** zoom)
-
-    # ══════════════════════════════════════════════════════════════════════
-    # Marker arrows
-    # ══════════════════════════════════════════════════════════════════════
-
-    def DrawMarkerLines(self, event=None):
-        if self.addingMarker:
-            return
-        for marker, (line_tag, direction) in list(self.marker_lines.items()):
-            if not marker.deleted:
-                try:
-                    cx, cy = marker.get_canvas_pos(marker.position)
-                    self.map_widget.canvas.delete(line_tag)
-                    angle_rad = math.radians(direction)
-                    self.map_widget.canvas.create_line(
-                        cx, cy,
-                        cx + ARROWLENGTH * math.cos(angle_rad),
-                        cy + ARROWLENGTH * math.sin(angle_rad),
-                        fill="green", width=5, tags=line_tag,
-                        arrow=customtkinter.LAST
-                    )
-                except Exception:
-                    pass
-
-    # ══════════════════════════════════════════════════════════════════════
-    # NWB road overlay
-    # ══════════════════════════════════════════════════════════════════════
-
-    def _schedule_road_refresh(self):
-        if self._road_refresh_job is not None:
-            self.after_cancel(self._road_refresh_job)
-        self._road_refresh_job = self.after(400, self._refresh_roads)
-
-    def _refresh_roads(self):
-        self._road_refresh_job = None
-        zoom        = self.map_widget.zoom
-        zoomInteger = int(zoom)
-        self.map_widget.set_zoom(zoomInteger)
-        if zoomInteger < ROAD_DRAW_ZOOM:
-            self.map_widget.canvas.delete(self._ROAD_TAG)
-            self.map_widget.canvas.delete(self._OFFSET_TAG)
-            try:
-                self.legendToDraw.discard(NWBLine)
-                self.legendToDraw.discard(helpLine)
-            except:
-                pass
-            return
-        bbox = self._get_viewport_bbox()
-        if bbox is None:
-            return
-
-        if (self._road_fetch_bbox is not None
-                and self._bbox_contains(self._road_fetch_bbox, bbox)
-                and self._road_polylines):
-            self._draw_cached_roads()
-            self._draw_offset_roads()
-            return
-
-        if not self._road_fetch_running:
-            self._road_fetch_running = True
-            lat_min, lon_min, lat_max, lon_max = bbox
-            dlat = (lat_max - lat_min) * 0.30
-            dlon = (lon_max - lon_min) * 0.30
-            fetch_bbox = (lat_min - dlat, lon_min - dlon,
-                          lat_max + dlat, lon_max + dlon)
-            threading.Thread(
-                target=self._fetch_roads_thread,
-                args=(fetch_bbox,),
-                daemon=True
-            ).start()
-
-    def _get_viewport_bbox(self):
-        w = self.map_widget.winfo_width()
-        h = self.map_widget.winfo_height()
-        if w < 10 or h < 10:
-            return None
-        try:
-            lat_nw, lon_nw = self.map_widget.convert_canvas_coords_to_decimal_coords(0, 0)
-            lat_se, lon_se = self.map_widget.convert_canvas_coords_to_decimal_coords(w, h)
-        except Exception:
-            return None
-        return (min(lat_nw, lat_se), min(lon_nw, lon_se),
-                max(lat_nw, lat_se), max(lon_nw, lon_se))
-
-    @staticmethod
-    def _bbox_contains(outer, inner):
-        return (outer[0] <= inner[0] and outer[1] <= inner[1] and
-                outer[2] >= inner[2] and outer[3] >= inner[3])
-
-    def _fetch_roads_thread(self, bbox):
-        lat_min, lon_min, lat_max, lon_max = bbox
-        headers = {"User-Agent": "Mozilla/5.0 (compatible; NWB-overlay/1.0)"}
-
-        params = {
-            "service":      "WFS",
-            "version":      "2.0.0",
-            "request":      "GetFeature",
-            "typeNames":    "nwbwegen:wegvakken",
-            "outputFormat": "application/json; subtype=geojson",
-            "srsName":      "EPSG:4326",
-            "bbox":         f"{lat_min},{lon_min},{lat_max},{lon_max},EPSG:4326",
-            "count":        "2000",
-            "CQL_FILTER":   "dienstnaam LIKE 'RWS%'"
-        }
-
-        try:
-            resp = requests.get(PDOK_WFS_URL, params=params,
-                                headers=headers, timeout=15)
-            resp.raise_for_status()
-            data     = resp.json()
-            features = data.get("features", [])
-            print(f"[NWB WFS] {len(features)} wegvakken ontvangen.")
-
-            polylines = []
-            for feature in features:
-                props = feature.get("properties", {})
-                if not props.get("dienstnaam", "").startswith("RWS"):
-                    continue
-                geom = feature.get("geometry")
-                if geom is None:
-                    continue
-                gtype  = geom.get("type", "")
-                coords = geom.get("coordinates", [])
-                if gtype == "LineString":
-                    segments = [coords]
-                elif gtype == "MultiLineString":
-                    segments = coords
-                else:
-                    continue
-                for seg in segments:
-                    latlon = [(pt[1], pt[0]) for pt in seg if len(pt) >= 2]
-                    if len(latlon) >= 2:
-                        polylines.append(latlon)
-
-            self._road_polylines  = polylines
-            self._road_fetch_bbox = bbox
-
-        except Exception as exc:
-            print(f"[NWB WFS] fout: {exc}")
-
-        self._road_fetch_running = False
-        self.after(0, self._draw_cached_roads)
-        self.after(0, self._draw_offset_roads)
-
-    def _draw_cached_roads(self):
-        canvas = self.map_widget.canvas
-        canvas.delete(self._ROAD_TAG)
-
-        if self.map_widget.zoom < ROAD_DRAW_ZOOM or not self._road_polylines:
-            return
-
-        line_width = max(1, self.map_widget.zoom - 16)
-
-        for polyline in self._road_polylines:
-            pts = []
-            for lat, lon in polyline:
-                try:
-                    cx, cy = self._latlon_to_canvas(lat, lon)
-                    pts.extend([cx, cy])
-                except Exception:
-                    pass
-            if len(pts) >= 4:
-                canvas.create_line(
-                    *pts,
-                    fill="#FFD700",
-                    width=line_width,
-                    tags=self._ROAD_TAG,
-                    capstyle="round",
-                    joinstyle="round",
-                )
-
-        canvas.tag_raise(self._ROAD_TAG)
-        self.legendToDraw.add(NWBLine)
-
-    # ══════════════════════════════════════════════════════════════════════
-    # Vluchtstrook parallel-offset overlay
-    # GEWIJZIGD: alleen de dichtstbijzijnde NWB-polyline wordt verschoven
-    # en getoond — geen massa aan oranje lijnen meer.
-    # ══════════════════════════════════════════════════════════════════════
-
-    def _find_nearest_polyline(self, lat, lon):
-        """Geeft de NWB-polyline die het dichtst bij (lat, lon) ligt."""
-        if not self._road_polylines:
-            return None
-
-        best_polyline = None
-        best_dist     = float("inf")
-
-        for polyline in self._road_polylines:
-            ref_lat, ref_lon = polyline[0]
-            px, py = _latlon_to_local_xy(lat, lon, ref_lat, ref_lon)
-
-            for i in range(len(polyline) - 1):
-                x1, y1 = _latlon_to_local_xy(*polyline[i],     ref_lat, ref_lon)
-                x2, y2 = _latlon_to_local_xy(*polyline[i + 1], ref_lat, ref_lon)
-                dx, dy  = x2 - x1, y2 - y1
-                len_sq  = dx * dx + dy * dy
-                if len_sq < 1e-9:
-                    continue
-                t  = max(0.0, min(1.0, ((px - x1) * dx + (py - y1) * dy) / len_sq))
-                cx_f = x1 + t * dx
-                cy_f = y1 + t * dy
-                d  = math.hypot(px - cx_f, py - cy_f)
-                if d < best_dist:
-                    best_dist     = d
-                    best_polyline = polyline
-
-        return best_polyline
-
-    def _compute_offset_vector(self, marker_lat, marker_lon, polyline):
-        """
-        Berekent de offset-vector (meters, lokaal Cartesisch) van de
-        dichtstbijzijnde punt op de polyline naar de marker.
-        """
-        ref_lat, ref_lon = polyline[0]
-        px, py = _latlon_to_local_xy(marker_lat, marker_lon, ref_lat, ref_lon)
-
-        best_dist = float("inf")
-        best_foot = (px, py)
-
-        for i in range(len(polyline) - 1):
-            x1, y1 = _latlon_to_local_xy(*polyline[i],     ref_lat, ref_lon)
-            x2, y2 = _latlon_to_local_xy(*polyline[i + 1], ref_lat, ref_lon)
-            dx, dy  = x2 - x1, y2 - y1
-            len_sq  = dx * dx + dy * dy
-            if len_sq < 1e-9:
-                continue
-            t  = max(0.0, min(1.0, ((px - x1) * dx + (py - y1) * dy) / len_sq))
-            fx = x1 + t * dx
-            fy = y1 + t * dy
-            d  = math.hypot(px - fx, py - fy)
-            if d < best_dist:
-                best_dist = d
-                best_foot = (fx, fy)
-
-        offset_x = px - best_foot[0]
-        offset_y = py - best_foot[1]
-        print(f"[Offset] vector ({offset_x:.1f}, {offset_y:.1f}) m, "
-              f"afstand {best_dist:.1f} m")
-        return offset_x, offset_y
-
-    def _build_offset_polylines(self, marker_lat, marker_lon):
-        """
-        FIX: verschuift alleen de dichtstbijzijnde NWB-polyline — niet alle.
-        Slaat het resultaat op in self._offset_polyline_single.
-        """
-        nearest = self._find_nearest_polyline(marker_lat, marker_lon)
-        if nearest is None:
-            print("[Offset] Geen NWB-data beschikbaar.")
-            self._offset_polyline_single = None
-            return
-
-        offset_x, offset_y = self._compute_offset_vector(marker_lat, marker_lon, nearest)
-
-        offset_dist = math.hypot(offset_x, offset_y)
-        if offset_dist < 0.5:
-            print("[Offset] Marker staat al op de weg; geen offset toegepast.")
-            # Gebruik de originele lijn als vluchtstrook-referentie
-            self._offset_polyline_single = nearest
-            return
-
-        self._offset_polyline_single = offset_polyline(nearest, offset_x, offset_y)
-        print(f"[Offset] 1 polyline verschoven met {offset_dist:.1f} m.")
-
-    def _draw_offset_roads(self):
-        """
-        FIX: tekent alleen de enkele verschoven vluchtstrook-polyline (oranje).
-        """
-        canvas = self.map_widget.canvas
-        canvas.delete(self._OFFSET_TAG)
-
-        if self.map_widget.zoom < ROAD_DRAW_ZOOM or self._offset_polyline_single is None:
-            return
-
-        line_width = max(1, self.map_widget.zoom - 16)
-        pts = []
-        for lat, lon in self._offset_polyline_single:
-            try:
-                cx, cy = self._latlon_to_canvas(lat, lon)
-                pts.extend([cx, cy])
-            except Exception:
-                pass
-
-        if len(pts) >= 4:
-            canvas.create_line(
-                *pts,
-                fill="#FF6600",
-                width=line_width,
-                tags=self._OFFSET_TAG,
-                capstyle="round",
-                joinstyle="round",
-            )
-
-        canvas.tag_raise(self._OFFSET_TAG)
-        self.legendToDraw.add(helpLine)
-
-    def _snap_to_offset_polyline(self, lat, lon):
-        """
-        Projecteert (lat, lon) op de enkele verschoven vluchtstrook-polyline.
-        """
-        if self._offset_polyline_single is None:
-            return lat, lon
-
-        foot_lat, foot_lon, _, _, _ = _project_onto_polyline(
-            lat, lon, self._offset_polyline_single)
-        return foot_lat, foot_lon
-
-    # ══════════════════════════════════════════════════════════════════════
-    # Markers
-    # ══════════════════════════════════════════════════════════════════════
-
+        
+        for marker, (line_tag, direction) in list(self.marker_manager.marker_lines.items()):
+            if not marker.deleted and direction is not None:
+                self.canvas_renderer.draw_marker_arrows(marker, direction, line_tag)
+    
     def AddMarker(self, coords, direction=None, markerText="new mark"):
-        self.addingMarker = True
+        """Add a marker at coordinates."""
+        self.adding_marker = True
         print("adding new marker:", coords)
         self.DeletePositions(markerText)
+        
         kwargs = {}
         if "calculated" in markerText:
             kwargs["marker_color_outside"] = marker_color_outside
             kwargs["marker_color_circle"] = marker_color_circle
             kwargs["text_color"] = marker_color_text
-            self.legendToDraw.add(calcMarker)
-
-        newMarker = self.map_widget.set_marker(coords[0], coords[1], text=markerText, **kwargs)
-
-        self.after(15, lambda: self.AddIncidentLocation(
-            self.geolocator.reverse(f"{coords[0]}, {coords[1]}")))
-
-        self.markersDict[newMarker] = markerText
+            self.legend_to_draw.add(calcMarker)
+        
+        new_marker = self.marker_manager.add_marker(coords, direction, markerText, **kwargs)
+        
+        self.after(15, lambda: self._add_incident_location(coords))
+        
         self.map_widget.update_idletasks()
-        self.marker_lines[newMarker] = [markerText, direction]
-        self.addingMarker = False
-        self.DrawMarkerLines()
-        self.legendToDraw.add(posMarker)
-
-    def CalculateButtonPressed(self):
-        testModeVar = self.testPositionModeVar.get()
-        if not self.markersDict:
-            print("geen markers om op te berekenen")
-            return
-        robotNames = self.getRobotNames()
-        #print("RObot namen zijn, ", robotNames)
-        if testModeVar == "1":
-            self.CalculatePositions(distance=5, amount=1, motherBotPos=1)
-        else:
-            self.popupWindow.pop_up(listOfRobotNames=robotNames)
-            #self.pop_up(["robot1", "robot2"], self.AfterPopUpToCalculate)
-
-    def CalculatePositions(self, distance=10, amount=1, motherBotPos=1):
-        """
-        FIX: posities worden langs de vluchtstrook-polyline berekend,
-        niet via een losse geodetische berekening in de lucht.
-
-        Werkwijze:
-        1. Bouw de parallel-offset polyline op basis van de eerste marker.
-        2. Projecteer de marker op die polyline → startpunt + startafstand.
-        3. Bereken elke volgende positie door startafstand + i*distance op
-           te zoeken langs de polyline → punt ligt gegarandeerd OP de lijn.
-        """
-        first_marker = list(self.markersDict.keys())[0]
-        lat, lon     = first_marker.position
-        direction    = self.marker_lines[first_marker][1]
-
-        # Stap 1: bouw de (enkele) vluchtstrook-polyline
-        self._build_offset_polylines(lat, lon)
-
-        if self._offset_polyline_single is None:
-            print("[Calc] Geen vluchtstrook-polyline beschikbaar.")
-            return
-
-        # Stap 2: projecteer de marker op de vluchtstrook → startafstand
-        _, _, start_along, _, _ = _project_onto_polyline(
-            lat, lon, self._offset_polyline_single)
-        print(f"[Calc] Startafstand langs vluchtstrook: {start_along:.1f} m")
-
-        # Stap 3: bereken posities op vaste afstanden langs de polyline
-        for i in range(1, amount + 1):
-            target_along = start_along + distance * i
-            pos_lat, pos_lon = _point_along_polyline(
-                self._offset_polyline_single, target_along)
-            print(f"[Calc] Kegel {i}: {pos_lat:.6f}, {pos_lon:.6f} "
-                  f"(+{distance * i:.0f} m langs lijn)")
-            self.AddMarker((pos_lat, pos_lon), direction,
-                           markerText=f"calculated{i}")
-
-        # Herteken de vluchtstrook overlay
-        self._draw_offset_roads()
-
-
+        self.adding_marker = False
+        self._draw_marker_arrows()
+        self.legend_to_draw.add(posMarker)
+    
+    def _add_incident_location(self, coords):
+        """Add incident location display."""
+        location_dict = self.location_manager.reverse_geocode(coords[0], coords[1])
+        if location_dict:
+            frame = self.location_manager.create_incident_frame(
+                self.controlFramePositionButtons,
+                location_dict,
+                self.GoToCoords
+            )
+            frame.grid(row=0, column=3, rowspan=2, sticky="ne", padx=10, pady=10)
+    
     def DeletePositions(self, nameToDelete="calculated"):
-        for key in [k for k, v in self.markersDict.items() if nameToDelete in v]:
-            del self.markersDict[key]
-            key.delete()
-        for key in [k for k, v in self.marker_lines.items() if nameToDelete in v[0]]:
-            self.map_widget.canvas.delete(self.marker_lines[key][0])
-            del self.marker_lines[key]
+        """Delete markers matching pattern."""
+        self.marker_manager.delete_markers_by_name(nameToDelete)
+        for marker in [m for m, (t, _) in self.marker_manager.marker_lines.items() 
+                      if nameToDelete in t]:
+            self.canvas_renderer.clear_canvas_tag(t)
+        
         try:
-            self.legendToDraw.discard(calcMarker)
+            self.legend_to_draw.discard(calcMarker)
         except:
             pass
-
+    
     def DeletePositionsButtonPressed(self):
-        canvas = self.map_widget.canvas
-        canvas.delete(self._OFFSET_TAG)
-        self._offset_polyline_single = None   # ← reset de enkele offset-lijn
+        """Handle delete positions button press."""
+        self.canvas_renderer.clear_canvas_tag(self._OFFSET_TAG)
+        self.offset_polyline_manager.clear()
         self.DeletePositions()
-
-    def SendMessagesToRobots(self, robotName=None, msgField=None, msg=None):
-        coordsDict = {}
-        for marker, name in self.markersDict.items():
-            if "calc" in name:
-                coords = marker.position
-                print("print coords dit zijn: ", coords)
-                coordsDict[name] = coords
-            else:
-                coordsDict[name] = None
-        print("coordsdict = ", coordsDict)
-        self.sendMessageCallback(coordsDict)
-
-    def AddIncidentLocation(self, location):
-        print("adding location")
-        if self.incidentFrame is not None:
-            print("there already is a frame")
+    
+    # ── Road management ──────────────────────────────────────────────────
+    
+    def _schedule_road_refresh(self):
+        """Schedule road data refresh."""
+        if self.road_refresh_job is not None:
+            self.after_cancel(self.road_refresh_job)
+        self.road_refresh_job = self.after(400, self._refresh_roads)
+    
+    def _refresh_roads(self):
+        """Refresh road data based on viewport."""
+        self.road_refresh_job = None
+        zoom = self.map_widget.zoom
+        zoom_int = int(zoom)
+        self.map_widget.set_zoom(zoom_int)
+        
+        if zoom_int < self.ROAD_DRAW_ZOOM:
+            self.canvas_renderer.clear_canvas_tag(self._ROAD_TAG)
+            self.canvas_renderer.clear_canvas_tag(self._OFFSET_TAG)
+            self.legend_to_draw.discard(NWBLine)
+            self.legend_to_draw.discard(helpLine)
             return
-        location = location.raw["address"]
-        print(location)
-        road  = location.get("road")
-        city  = location.get("city")
-        state = location.get("state")
-        self.incidentFrame = customtkinter.CTkFrame(self.controlFramePositionButtons)
-        self.incidentFrame.grid(row=0, column=3, rowspan=2, sticky="ne", padx=10, pady=10)
-
-        customtkinter.CTkLabel(
-            self.incidentFrame,
-            text="Incidentlocatie:",
-            font=("Arial", 14, "bold"),
-            fg_color='#01a6f8',
-            corner_radius=5,
-            text_color="black"
-        ).grid(row=0, column=0, padx=10, pady=(5,0), sticky="w")
-
-        customtkinter.CTkLabel(
-            self.incidentFrame,
-            text=f"{road}, {city}, {state}",
-            fg_color='#01a6f8',
-            corner_radius=5,
-            text_color="black"
-        ).grid(row=1, column=0, padx=10, pady=(0,5), sticky="w")
-
-        customtkinter.CTkButton(
-            self.incidentFrame, text="Ga naar positie",
-            command=self.GoToCoords, border_color="black", border_width=2, fg_color="green"
-        ).grid(row=2, column=0, padx=10, pady=10, sticky="nw")
-
+        
+        bbox = self.map_view_controller.get_viewport_bbox()
+        if bbox is None:
+            return
+        
+        if (self.road_data_manager.road_fetch_bbox is not None
+                and MapViewController.bbox_contains(self.road_data_manager.road_fetch_bbox, bbox)
+                and self.road_data_manager.has_data()):
+            self._draw_cached_roads()
+            self._draw_offset_roads()
+            return
+        
+        if not self.road_data_manager.road_fetch_running:
+            self.road_data_manager.road_fetch_running = True
+            lat_min, lon_min, lat_max, lon_max = bbox
+            dlat = (lat_max - lat_min) * 0.30
+            dlon = (lon_max - lon_min) * 0.30
+            fetch_bbox = (lat_min - dlat, lon_min - dlon,
+                         lat_max + dlat, lon_max + dlon)
+            
+            threading.Thread(
+                target=self.road_data_manager.fetch_roads_thread,
+                args=(fetch_bbox,),
+                daemon=True
+            ).start()
+    
+    def _draw_cached_roads(self):
+        """Draw cached road polylines."""
+        if self.map_widget.zoom >= self.ROAD_DRAW_ZOOM:
+            line_width = max(1, int(self.map_widget.zoom) - 16)
+            self.canvas_renderer.draw_roads(
+                self.road_data_manager.road_polylines,
+                self._ROAD_TAG,
+                NWBLineSettings[1],
+                line_width
+            )
+            self.legend_to_draw.add(NWBLine)
+    
+    def _draw_offset_roads(self):
+        """Draw offset vluchtstrook polyline."""
+        if self.map_widget.zoom >= self.ROAD_DRAW_ZOOM:
+            line_width = max(1, int(self.map_widget.zoom) - 16)
+            offset_polyline = self.offset_polyline_manager.get_offset_polyline()
+            if offset_polyline:
+                self.canvas_renderer.draw_roads(
+                    [offset_polyline],
+                    self._OFFSET_TAG,
+                    helpLineSettings[1],
+                    line_width
+                )
+                self.legend_to_draw.add(helpLine)
+    
+    # ── Position calculation ──────────────────────────────────────────────
+    
+    def switchTest(self):
+        """Handle test mode switch."""
+        print(self.testPositionModeVar.get())
+    
+    def CalculateButtonPressed(self):
+        """Handle calculate button press."""
+        if not self.marker_manager.has_markers():
+            print("geen markers om op te berekenen")
+            return
+        
+        test_mode = self.testPositionModeVar.get()
+        robot_names = self.getRobotNames()
+        
+        if test_mode == "1":
+            self.CalculatePositions(distance=5, amount=1, motherBotPos=1)
+        else:
+            self.popupWindow.pop_up(listOfRobotNames=robot_names)
+    
+    def CalculatePositions(self, distance=10, amount=1, motherBotPos=1):
+        """Calculate robot positions along offset polyline."""
+        first_marker = self.marker_manager.get_first_marker()
+        if first_marker is None:
+            return
+        
+        lat, lon = first_marker.position
+        direction = self.marker_manager.marker_lines[first_marker][1]
+        
+        # Build offset polyline
+        self.offset_polyline_manager.build_offset_polylines(
+            lat, lon, self.road_data_manager.road_polylines
+        )
+        
+        offset_polyline = self.offset_polyline_manager.get_offset_polyline()
+        if offset_polyline is None:
+            return
+        
+        # Calculate positions
+        positions = PositionCalculator.calculate_positions(
+            lat, lon, direction, offset_polyline, distance, amount
+        )
+        
+        for i, (pos_lat, pos_lon, pos_direction) in enumerate(positions, 1):
+            self.AddMarker((pos_lat, pos_lon), pos_direction, f"calculated{i}")
+        
+        self._draw_offset_roads()
+    
+    def SendMessagesToRobots(self, robotName=None, msgField=None, msg=None):
+        """Send calculated positions to robots."""
+        coords_dict = self.marker_manager.get_calculated_positions()
+        print("coordsdict = ", coords_dict)
+        self.sendMessageCallback(coords_dict)
+    
     def GoToCoords(self):
-        coords = next(iter(self.markersDict))
-        lat, lon = coords.position
-        self.map_widget.set_position(lat, lon)
-        self.map_widget.set_zoom(19)
-        self._on_scroll()
-
-    def _latlon_to_canvas(self, lat, lon):
-        widget  = self.map_widget
-        zoom    = widget.zoom
-        tile_x  = (lon + 180) / 360 * (2 ** zoom)
-        sin_lat = math.sin(math.radians(lat))
-        tile_y  = (1 - math.log((1 + sin_lat) / (1 - sin_lat)) / (2 * math.pi)) / 2 * (2 ** zoom)
-        upper_left_x, upper_left_y = widget.upper_left_tile_pos
-        cx = (tile_x - upper_left_x) * widget.tile_size
-        cy = (tile_y - upper_left_y) * widget.tile_size
-        return cx, cy
-
+        """Pan to first marker."""
+        first_marker = self.marker_manager.get_first_marker()
+        if first_marker:
+            lat, lon = first_marker.position
+            self.map_view_controller.go_to_coordinates(lat, lon)
+            self._on_scroll()
+    
     def AfterPopUpToCalculate(self, chosenSettings):
+        """Handle popup window callback."""
         amount = 1
         try:
             amount = int(chosenSettings["Aantal"])
         except Exception:
             pass
-        formation  = chosenSettings["Formatie"]
-        startRobot = chosenSettings["RobotStart"]
-        print(f"volgende waardes zijn ingetikt: {amount}, {formation}, {startRobot}")
+        
+        formation = chosenSettings["Formatie"]
+        start_robot = chosenSettings["RobotStart"]
+        print(f"volgende waardes zijn ingetikt: {amount}, {formation}, {start_robot}")
         self.CalculatePositions(amount=amount)
-
+    
     def ResetButtonPressed(self):
+        """Handle reset button press."""
         self.resetInterface()
-
+    
     def Reset(self):
+        """Reset all UI and data."""
         print("map reset")
         try:
-            self.incidentFrame.grid_forget()
-            self.incidentFrame.destroy()
-            self.incidentFrame = None
-            markerslist = [k for k, v in self.markersDict.items()]
-            for key in markerslist:
-                del self.markersDict[key]
-                key.delete()
-            markerslist2 = [k for k, v in self.marker_lines.items()]
-            for key in markerslist2:
-                self.map_widget.canvas.delete(self.marker_lines[key][0])
-                del self.marker_lines[key]
-            canvas = self.map_widget.canvas
-            canvas.delete(self._OFFSET_TAG)
-            self._offset_polyline_single = None
-            self.legendToDraw.discard(posMarker)
-            self.legendToDraw.discard(calcMarker)
-            self.legendToDraw.discard(helpLine)
+            self.location_manager.destroy_incident_frame()
+            self.marker_manager.delete_all_markers()
+            self.canvas_renderer.clear_canvas_tag(self._OFFSET_TAG)
+            self.offset_polyline_manager.clear()
+            self.legend_to_draw.discard(posMarker)
+            self.legend_to_draw.discard(calcMarker)
+            self.legend_to_draw.discard(helpLine)
         except Exception as e:
-            print("error hier is = ", e)
+            print(f"error hier is = {e}")

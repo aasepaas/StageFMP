@@ -9,14 +9,17 @@ import customtkinter as ctk
 from MQTTClient import MQTTClient  
 from customLogger import customLogger
 import math
-
-
+import sys
+from testrun import run_all_tests
 
 ca_certs=r"C:\stage_HBO3_FMN\certificaten\ca_root.pem"
 certfile=r"C:\stage_HBO3_FMN\certificaten\GUI-Na-CRL18-05-cert.pem"
 keyfile=r"C:\stage_HBO3_FMN\certificaten\GUI-Na-CRL18-05-key.pem"
 
 if __name__ == "__main__":
+
+    # success = run_all_tests()
+    # sys.exit(0 if success else 1)
 
     def on_message(client, userdata, msg):
        bericht = msg.payload.decode()

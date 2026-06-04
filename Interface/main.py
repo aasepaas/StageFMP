@@ -5,10 +5,18 @@ from time import sleep
 from MQTTClient import MQTTClient  
 import sys
 from testrun import run_all_tests
+from pathlib import Path
 
-ca_certs=r"C:\stage_HBO3_FMN\certificaten\ca_root.pem"
-certfile=r"C:\stage_HBO3_FMN\certificaten\GUI-Na-CRL18-05-cert.pem"
-keyfile=r"C:\stage_HBO3_FMN\certificaten\GUI-Na-CRL18-05-key.pem"
+BASE_DIR = Path(__file__).resolve().parent
+CERT_DIR = BASE_DIR / "certificaten"
+
+ca_certs = CERT_DIR / "ca_root.pem"
+certfile = CERT_DIR / "GUI-Na-CRL18-05-cert.pem"
+keyfile  = CERT_DIR / "GUI-Na-CRL18-05-key.pem"
+
+# ca_certs=r"C:\stage_HBO3_FMN\certificaten\ca_root.pem"
+# certfile=r"C:\stage_HBO3_FMN\certificaten\GUI-Na-CRL18-05-cert.pem"
+# keyfile=r"C:\stage_HBO3_FMN\certificaten\GUI-Na-CRL18-05-key.pem"
 
 if __name__ == "__main__":
 
@@ -20,7 +28,7 @@ if __name__ == "__main__":
        topic = msg.topic
        print(f"Bericht ontvangen op '{topic}': {bericht}")
 
-    MQTTClient1 = MQTTClient("localhost", 8883, "GUI", ca_certs, certfile, keyfile)
+    MQTTClient1 = MQTTClient("100.79.123.44", 8883, "GUI", ca_certs, certfile, keyfile)
     App = App(MQTTClient1)
 
     MQTTClient1.SetMessageHandler(App.MessageHandler)

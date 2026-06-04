@@ -48,7 +48,7 @@ class App(customtkinter.CTk):
         self.robotViewer = AppFrameRobots(self)
         self.robotViewer.grid(row=0, column=0, rowspan=3, padx=(10,0), pady=(0,10), sticky="nswe")
 
-        self.mapViewer = AppFrameMap(self, sendCallback=self.SendCoordinatesToRobots, resetCallback=self.ResetInterface, getRobotNames=self.robotViewer.GetRobotNames)
+        self.mapViewer = AppFrameMap(self, sendCallback=self.SendCoordinatesToRobots, resetCallback=self.ResetInterface, getRobotNames=self.robotViewer.get_robot_names)
         self.mapViewer.grid(row=0, column=1, rowspan=3, padx=10, pady=(0,10), sticky="nswe")
 
 
@@ -66,13 +66,13 @@ class App(customtkinter.CTk):
         coords = [markerToBePlaced[1], markerToBePlaced[2]]
         name = markerToBePlaced[0]
         direction = markerToBePlaced[3]
-        self.mapViewer.AddMarker(coords=coords, direction=direction, markerText=name)
+        self.mapViewer.add_marker(coords=coords, direction=direction, markerText=name)
 
     def MessageHandler(self, client, userdata, msg):
         decodedMessage = msg.payload.decode()
         topic = msg.topic
         print(f"Bericht ontvangen op '{topic}': {decodedMessage}")
-        markterToBePlaced = self.robotViewer.parseMessage(decodedMessage=decodedMessage,topic=topic)
+        markterToBePlaced = self.robotViewer.parse_message(decodedMessage=decodedMessage,topic=topic)
         print("marker to be placed if: " f"{markterToBePlaced}")
         if markterToBePlaced:
             print("marker to be placed is goed ")
@@ -81,7 +81,7 @@ class App(customtkinter.CTk):
 
     def SendCoordinatesToRobots(self, coordsDict):
         msgField = "MoveToPosition"
-        robotNames = self.robotViewer.GetRobotNames()
+        robotNames = self.robotViewer.get_robot_names()
         robotsToSendTo = [key for key in robotNames if key not in coordsDict]
         coords = [val for key, val in coordsDict.items() if val != None]
 
@@ -99,8 +99,8 @@ class App(customtkinter.CTk):
     def ResetInterface(self):
         print("resetting screen")
         try:
-            self.mapViewer.Reset()
-            self.robotViewer.Reset()
+            self.mapViewer.reset_frame()
+            self.robotViewer.reset()
         except Exception as e:
             print("EXCEPTION: ", e)
 

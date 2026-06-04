@@ -2,21 +2,21 @@ class Robot:
     """Managaes singular robot data such as status adn"""
     def __init__(self, name):
         self.name = name
-        self.currentPosition = []
-        self.currentStatus = None
+        self._current_position = []
+        self._current_status = None
 
 
-    def SetStatus(self, status):
-        self.currentStatus = status
+    def set_status(self, status):
+        self._current_status = status
 
-    def GetStatus(self):
-        return self.currentStatus
+    def get_status(self):
+        return self._current_status
 
-    def GetCurrentPosition(self):
-        return self.currentPosition
+    def get_current_position(self):
+        return self._current_position
 
-    def SetCurrentPosition(self, coords):
-        self.currentPosition = coords
+    def set_current_position(self, coords):
+        self._current_position = coords
 
 
         

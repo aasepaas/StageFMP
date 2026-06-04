@@ -6,6 +6,7 @@ class LocationManager:
     """Manages lat,lon to address and displays incident location."""
     
     def __init__(self):
+        #nomatim geolocator for reverse geocoding
         self.geolocator = Nominatim(user_agent="my_app")
         self.incident_frame = None
     

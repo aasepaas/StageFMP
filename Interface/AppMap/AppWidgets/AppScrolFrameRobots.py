@@ -1,5 +1,3 @@
-from tkinter import Canvas
-from turtle import update
 import customtkinter
 from PIL import Image, ImageDraw
 import os
@@ -9,15 +7,17 @@ class AppScrolFrameRobots(customtkinter.CTkScrollableFrame):
     def __init__(self, master):
         super().__init__(master)
         self.currentRow = 0
+        #base image path and loading the image, this is used for the robot icons in the scroll frame
         BASE_DIR = os.path.dirname(os.path.abspath(__file__))
         self.IMAGE_PATH = os.path.join(BASE_DIR, 'robotScreenshot.png')
         self.base_image = Image.open(self.IMAGE_PATH)  # Bewaar originele image
         self.robotFrames = {}  # Dictionary om frames en labels bij te houden per robot
     
-    def AddNewRobotToFrame(self, robotName):
+    def add_new_robot_to_frame(self, robotName):
+        """Add a new robot to the list and UI frame."""
         control_frame = customtkinter.CTkFrame(self)
         
-        # Maak image met status indicator
+        #make image with the status indicator
         img_with_status = self._create_image_with_status(self.base_image, None)
         ctk_image = customtkinter.CTkImage(
             light_image=img_with_status,
@@ -26,7 +26,7 @@ class AppScrolFrameRobots(customtkinter.CTkScrollableFrame):
         )
         
         img_label = customtkinter.CTkLabel(control_frame, text="", image=ctk_image)
-        img_label.image = ctk_image  # Referentie behouden
+        img_label.image = ctk_image 
         
         control_frame.grid(row=self.currentRow, column=0, padx=(10, 10), pady=(10, 10))
         img_label.grid(row=0, column=0, rowspan=2, padx=(10, 10), pady=(10, 10))
@@ -36,7 +36,7 @@ class AppScrolFrameRobots(customtkinter.CTkScrollableFrame):
         status = "online"
         statusText = customtkinter.CTkLabel(control_frame, text=f"status: {status}", font=("Arial", 14), fg_color="green")
         statusText.grid(row=1, column=1, padx=(10, 10), pady=(10, 10), sticky="n")
-        # Bewaar referenties
+        # save image with settings so that it can be changed later on
         self.robotFrames[robotName] = {
             'frame': control_frame,
             'img_label': img_label,
@@ -48,11 +48,11 @@ class AppScrolFrameRobots(customtkinter.CTkScrollableFrame):
         self.currentRow += 1
     
     def _create_image_with_status(self, base_img, status):
-        """Maak een kopie van de image met status indicator cirkel"""
+        """Make a copy of the image with the status indicator."""
         img = base_img.copy()
         draw = ImageDraw.Draw(img)
     
-        # Bepaal kleur op basis van status
+        #color is decided based on status, error=red, online/done driving/no errors =green
         if status in ["done", "online"]:
             color = "green"
             show_cross = False
@@ -60,18 +60,15 @@ class AppScrolFrameRobots(customtkinter.CTkScrollableFrame):
             color = "red"
             show_cross = True
         else:
-            # Geen status indicator
             return img
     
-        # Teken cirkel rechtsboven (pas positie aan naar wens)
+        # draw circle top right of the image
         img_width, img_height = img.size
-        circle_radius = int(img_width * 0.15)  # 15% van breedte
+        circle_radius = int(img_width * 0.15)  
     
-        # Positie rechtsboven met wat marge
         x = img_width - circle_radius - 5
         y = 5
     
-        # Teken cirkel met witte rand
         draw.ellipse(
             [x - circle_radius, y, x + circle_radius, y + circle_radius * 2],
             fill=color,
@@ -79,25 +76,20 @@ class AppScrolFrameRobots(customtkinter.CTkScrollableFrame):
             width=7
         )
     
-        # Teken wit kruis voor error status
+        # draw white cross if error situation
         if show_cross:
-            # Center van de cirkel
             center_x = x
             center_y = y + circle_radius
-        
-            # Kruis grootte (iets kleiner dan de cirkel)
+
             cross_size = int(circle_radius * 0.7)
-        
-            # Teken X (twee diagonale lijnen)
-            # Lijn van linksboven naar rechtsonder
+
             draw.line(
                 [center_x - cross_size, center_y - cross_size,
                  center_x + cross_size, center_y + cross_size],
                 fill="white",
                 width=6
             )
-        
-            # Lijn van rechtsboven naar linksonder
+
             draw.line(
                 [center_x + cross_size, center_y - cross_size,
                  center_x - cross_size, center_y + cross_size],
@@ -107,36 +99,36 @@ class AppScrolFrameRobots(customtkinter.CTkScrollableFrame):
     
         return img
 
-    def UpdateRobotFrame(self, robotName, updateValueField, updateValue):
-        """Update de robot frame met nieuwe status"""
+    def update_robot_frame(self, robotName, updateValueField, updateValue):
+        """Update de robot frame met nieuwe status."""
         if robotName not in self.robotFrames:
             print(f"Robot {robotName} not found in frames")
             return
         
         robot_data = self.robotFrames[robotName]
         
-        # Als het een status update is
+        # only change if it is a status update
         if updateValueField.lower() == "status":
             robot_data['status'] = updateValue
             robot_data['status_label'].configure(text=f"Status is: {updateValue} ", fg_color="red") if updateValue == "error" else robot_data['status_label'].configure(text=f"Status is: {updateValue} ", fg_color="green")
             
-            # Maak nieuwe image met status indicator
+
             img_with_status = self._create_image_with_status(self.base_image, updateValue)
-            
-            # Update de CTkImage
+
             new_ctk_image = customtkinter.CTkImage(
                 light_image=img_with_status,
                 dark_image=img_with_status,
                 size=(75, 75)
             )
             
-            # Update label
+
             robot_data['img_label'].configure(image=new_ctk_image)
             robot_data['img_label'].image = new_ctk_image  # Referentie behouden
             
             print(f"Updated {robotName} status to {updateValue}")
 
     def ResetList(self):
+        """Reset the list by removing all images and settings."""
         robotList = [k for k,v in self.robotFrames.items()]
         for k in robotList:
             robot_data = self.robotFrames[k]

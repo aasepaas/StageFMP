@@ -2,7 +2,7 @@
 
 
 
-def _latlon_to_local_xy(lat, lon, ref_lat, ref_lon):
+def latlon_to_local_xy(lat, lon, ref_lat, ref_lon):
     """Converteert lat/lon naar lokale Cartesische meters t.o.v. referentiepunt."""
     R = 6371000
     x = math.radians(lon - ref_lon) * R * math.cos(math.radians(ref_lat))
@@ -10,7 +10,7 @@ def _latlon_to_local_xy(lat, lon, ref_lat, ref_lon):
     return x, y
 
 
-def _local_xy_to_latlon(x, y, ref_lat, ref_lon):
+def local_xy_to_latlon(x, y, ref_lat, ref_lon):
     """Converteert lokale Cartesische meters terug naar lat/lon."""
     R = 6371000
     lat = ref_lat + math.degrees(y / R)
@@ -26,7 +26,7 @@ def offset_polyline(polyline_latlon, offset_x, offset_y):
         return list(polyline_latlon)
 
     ref_lat, ref_lon = polyline_latlon[0]
-    xy = [_latlon_to_local_xy(lat, lon, ref_lat, ref_lon)
+    xy = [latlon_to_local_xy(lat, lon, ref_lat, ref_lon)
           for lat, lon in polyline_latlon]
 
     normals = []
@@ -56,7 +56,7 @@ def offset_polyline(polyline_latlon, offset_x, offset_y):
         projection = offset_x * nx + offset_y * ny
         new_x = xy[i][0] + projection * nx
         new_y = xy[i][1] + projection * ny
-        result.append(_local_xy_to_latlon(new_x, new_y, ref_lat, ref_lon))
+        result.append(local_xy_to_latlon(new_x, new_y, ref_lat, ref_lon))
 
     return result
 
@@ -67,7 +67,7 @@ def _polyline_length_along(polyline_latlon):
     Lengte van de lijst = len(polyline_latlon).
     """
     ref_lat, ref_lon = polyline_latlon[0]
-    xy = [_latlon_to_local_xy(lat, lon, ref_lat, ref_lon)
+    xy = [latlon_to_local_xy(lat, lon, ref_lat, ref_lon)
           for lat, lon in polyline_latlon]
     dists = [0.0]
     for i in range(1, len(xy)):
@@ -87,8 +87,8 @@ def _project_onto_polyline(lat, lon, polyline_latlon):
         t           : parameter [0,1] binnen dat segment
     """
     ref_lat, ref_lon = polyline_latlon[0]
-    px, py = _latlon_to_local_xy(lat, lon, ref_lat, ref_lon)
-    xy = [_latlon_to_local_xy(la, lo, ref_lat, ref_lon) for la, lo in polyline_latlon]
+    px, py = latlon_to_local_xy(lat, lon, ref_lat, ref_lon)
+    xy = [latlon_to_local_xy(la, lo, ref_lat, ref_lon) for la, lo in polyline_latlon]
 
     cum_dists = [0.0]
     for i in range(1, len(xy)):
@@ -118,7 +118,7 @@ def _project_onto_polyline(lat, lon, polyline_latlon):
             best_seg   = i
             best_t     = t
 
-    foot_lat, foot_lon = _local_xy_to_latlon(best_foot[0], best_foot[1], ref_lat, ref_lon)
+    foot_lat, foot_lon = local_xy_to_latlon(best_foot[0], best_foot[1], ref_lat, ref_lon)
     return foot_lat, foot_lon, best_along, best_seg, best_t
 
 
@@ -128,7 +128,7 @@ def _point_along_polyline(polyline_latlon, along_dist):
     Knipt af aan begin of einde als along_dist buiten bereik valt.
     """
     ref_lat, ref_lon = polyline_latlon[0]
-    xy = [_latlon_to_local_xy(la, lo, ref_lat, ref_lon) for la, lo in polyline_latlon]
+    xy = [latlon_to_local_xy(la, lo, ref_lat, ref_lon) for la, lo in polyline_latlon]
 
     cum = 0.0
     for i in range(len(xy) - 1):
@@ -137,7 +137,7 @@ def _point_along_polyline(polyline_latlon, along_dist):
             t  = (along_dist - cum) / seg_len if seg_len > 1e-9 else 0.0
             lx = xy[i][0] + t * (xy[i+1][0] - xy[i][0])
             ly = xy[i][1] + t * (xy[i+1][1] - xy[i][1])
-            return _local_xy_to_latlon(lx, ly, ref_lat, ref_lon)
+            return local_xy_to_latlon(lx, ly, ref_lat, ref_lon)
         cum += seg_len
 
     # Voorbij het einde → laatste punt teruggeven

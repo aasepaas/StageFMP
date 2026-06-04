@@ -10,12 +10,15 @@ class CanvasRenderer:
     
     def draw_scale(self):
         """Draw scale bar on canvas."""
+        #delete previous scale if it exists
         self.canvas.delete("scale")
+        #check if canvas has valid size before drawing, unvalid size means map is not fully loaded yet, so skip drawing scale for now
         w, h = self.map_widget.winfo_width(), self.map_widget.winfo_height()
         if w < 10 or h < 10:
             return False
         
         x1, y1, x2, y2 = 20, h - 30, 120, h - 30
+        # Calculate the distance in meters that corresponds to the pixel length of the scale bar
         meters = self._pixels_to_meters(100)
         self.canvas.create_line(x1, y1, x2, y2, fill="white", width=3, tags="scale")
         self.canvas.create_line(x1, y1 - 5, x1, y1 + 5, fill="white", width=3, tags="scale")
@@ -29,12 +32,14 @@ class CanvasRenderer:
     
     def draw_legend(self, legend_items, legend_config):
         """Draw legend with specified items, such as markers and lines."""
+
         self.canvas.delete("legend")
         w, h = self.map_widget.winfo_width(), self.map_widget.winfo_height()
         
         if w < 10 or h < 10 or not legend_items:
             return False
         
+        #initial position and spacing settings for legend items
         start_x = 20
         current_y = h - 180
         line_length = 40
@@ -154,7 +159,7 @@ class CanvasRenderer:
             return False
     
     def clear_canvas_tag(self, tag):
-        """Clear all items with given tag."""
+        """Clear all items with given tag/name."""
         self.canvas.delete(tag)
     
     def _pixels_to_meters(self, pixels):

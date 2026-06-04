@@ -1,6 +1,6 @@
 import math
 from AppMap.AppWidgets.FormationCalculator import (
-    _latlon_to_local_xy, offset_polyline, _project_onto_polyline
+    latlon_to_local_xy, offset_polyline, _project_onto_polyline
 )
 
 
@@ -20,11 +20,11 @@ class OffsetPolylineManager:
         
         for polyline in polylines:
             ref_lat, ref_lon = polyline[0]
-            px, py = _latlon_to_local_xy(lat, lon, ref_lat, ref_lon)
+            px, py = latlon_to_local_xy(lat, lon, ref_lat, ref_lon)
             
             for i in range(len(polyline) - 1):
-                x1, y1 = _latlon_to_local_xy(*polyline[i], ref_lat, ref_lon)
-                x2, y2 = _latlon_to_local_xy(*polyline[i + 1], ref_lat, ref_lon)
+                x1, y1 = latlon_to_local_xy(*polyline[i], ref_lat, ref_lon)
+                x2, y2 = latlon_to_local_xy(*polyline[i + 1], ref_lat, ref_lon)
                 dx, dy = x2 - x1, y2 - y1
                 len_sq = dx * dx + dy * dy
                 
@@ -45,14 +45,14 @@ class OffsetPolylineManager:
     def compute_offset_vector(self, marker_lat, marker_lon, polyline):
         """Compute offset vector from polyline to marker."""
         ref_lat, ref_lon = polyline[0]
-        px, py = _latlon_to_local_xy(marker_lat, marker_lon, ref_lat, ref_lon)
+        px, py = latlon_to_local_xy(marker_lat, marker_lon, ref_lat, ref_lon)
         
         best_dist = float("inf")
         best_foot = (px, py)
         
         for i in range(len(polyline) - 1):
-            x1, y1 = _latlon_to_local_xy(*polyline[i], ref_lat, ref_lon)
-            x2, y2 = _latlon_to_local_xy(*polyline[i + 1], ref_lat, ref_lon)
+            x1, y1 = latlon_to_local_xy(*polyline[i], ref_lat, ref_lon)
+            x2, y2 = latlon_to_local_xy(*polyline[i + 1], ref_lat, ref_lon)
             dx, dy = x2 - x1, y2 - y1
             len_sq = dx * dx + dy * dy
             

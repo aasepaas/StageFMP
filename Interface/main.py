@@ -27,7 +27,7 @@ if __name__ == "__main__":
     MQTTClient1 = MQTTClient("100.79.123.44", 8883, "GUI", ca_certs, certfile, keyfile)
     App = App(MQTTClient1)
 
-    MQTTClient1.SetMessageHandler(App.MessageHandler)
+    MQTTClient1.SetMessageHandler(App.message_handler)
     MQTTClient1.connectToBroker("http://100.79.123.44:8080/ejbca/publicweb/webdist/certdist?cmd=crl&issuer=CN%3DSmartConeSubCA%2CO%3DFMP%2CC%3DNL")
 
     sleep(0.1)
@@ -50,4 +50,4 @@ if __name__ == "__main__":
 
 
 
-    App.startGUI()
+    App.start_GUI()

@@ -14,10 +14,6 @@ ca_certs = CERT_DIR / "ca_root.pem"
 certfile = CERT_DIR / "GUI-Na-CRL18-05-cert.pem"
 keyfile  = CERT_DIR / "GUI-Na-CRL18-05-key.pem"
 
-# ca_certs=r"C:\stage_HBO3_FMN\certificaten\ca_root.pem"
-# certfile=r"C:\stage_HBO3_FMN\certificaten\GUI-Na-CRL18-05-cert.pem"
-# keyfile=r"C:\stage_HBO3_FMN\certificaten\GUI-Na-CRL18-05-key.pem"
-
 if __name__ == "__main__":
 
     # success = run_all_tests()
@@ -32,12 +28,12 @@ if __name__ == "__main__":
     App = App(MQTTClient1)
 
     MQTTClient1.SetMessageHandler(App.MessageHandler)
-    MQTTClient1.connectToBroker()
-    while not MQTTClient1.connectionStatus():
+    MQTTClient1.connectToBroker("http://100.79.123.44:8080/ejbca/publicweb/webdist/certdist?cmd=crl&issuer=CN%3DSmartConeSubCA%2CO%3DFMP%2CC%3DNL")
+
+    sleep(0.1)
+    while not MQTTClient1.get_connection_status():
         pass
 
-    MQTTClient1.listen_for_messages()
-    sleep(0.1)
 
     sleep(1.1)
 

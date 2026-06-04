@@ -163,7 +163,7 @@ class TestMQTTClient(unittest.TestCase):
                            self.ca_certs, self.certfile, self.keyfile)
         client.connected = True
         
-        result = client.connectToBroker()
+        result = client.connect_to_broker()
         
         self.assertTrue(result)
     
@@ -177,7 +177,7 @@ class TestMQTTClient(unittest.TestCase):
                            self.ca_certs, self.certfile, self.keyfile)
         client.connected = False
         
-        client.connectToBroker()
+        client.connect_to_broker()
         
         # Verify tls_set was called with correct parameters
         mock_mqtt_instance.tls_set.assert_called_once()
@@ -198,7 +198,7 @@ class TestMQTTClient(unittest.TestCase):
                            self.ca_certs, self.certfile, self.keyfile)
         client.connected = False
         
-        client.connectToBroker()
+        client.connect_to_broker()
         
         # Verify connect was called
         mock_mqtt_instance.connect.assert_called_once_with(self.broker, self.port, 60)
@@ -213,7 +213,7 @@ class TestMQTTClient(unittest.TestCase):
                            self.ca_certs, self.certfile, self.keyfile)
         client.connected = False
         
-        client.connectToBroker()
+        client.connect_to_broker()
         
         mock_mqtt_instance.reconnect_delay_set.assert_called_once_with(min_delay=1, max_delay=120)
     
@@ -227,7 +227,7 @@ class TestMQTTClient(unittest.TestCase):
                            None, None, None)
         client.connected = False
         
-        result = client.connectToBroker()
+        result = client.connect_to_broker()
         
         self.assertFalse(result)
     
@@ -304,7 +304,7 @@ class TestMQTTClient(unittest.TestCase):
                            self.ca_certs, self.certfile, self.keyfile)
         
         custom_handler = MagicMock()
-        client.SetMessageHandler(custom_handler)
+        client.set_message_handler(custom_handler)
         
         self.assertEqual(mock_mqtt_instance.on_message, custom_handler)
     
@@ -446,7 +446,7 @@ class TestMQTTClient(unittest.TestCase):
                            self.ca_certs, self.certfile, self.keyfile)
         client.connected = True
         
-        self.assertTrue(client.connectionStatus())
+        self.assertTrue(client.connection_status())
     
     @patch('paho.mqtt.client.Client')
     def test_connection_status_disconnected(self, mock_mqtt_client_class):
@@ -458,7 +458,7 @@ class TestMQTTClient(unittest.TestCase):
                            self.ca_certs, self.certfile, self.keyfile)
         client.connected = False
         
-        self.assertFalse(client.connectionStatus())
+        self.assertFalse(client.connection_status())
 
 
 

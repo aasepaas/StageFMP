@@ -12,6 +12,7 @@ def run_all_tests():
     from tests.test_marker_manager import TestMarkerManager
     from tests.test_map_view_controller import TestMapViewController
     from tests.test_mqtt import TestMQTTClient
+    from tests.test_app import TestApp
     
     loader = unittest.TestLoader()
     suite = unittest.TestSuite()
@@ -24,7 +25,8 @@ def run_all_tests():
         TestLocationManager,
         TestMarkerManager,
         TestMapViewController,
-        TestMQTTClient
+        TestMQTTClient,
+        TestApp
     ]
     
     for test_class in test_classes:

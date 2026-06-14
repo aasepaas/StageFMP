@@ -16,8 +16,8 @@ keyfile  = CERT_DIR / "GUI-Na-CRL18-05-key.pem"
 
 if __name__ == "__main__":
 
-    # success = run_all_tests()
-    # sys.exit(0 if success else 1)
+    success = run_all_tests()
+    sys.exit(0 if success else 1)
 
     def on_message(client, userdata, msg):
        bericht = msg.payload.decode()

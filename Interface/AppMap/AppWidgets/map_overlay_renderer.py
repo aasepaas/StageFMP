@@ -1,4 +1,6 @@
 from typing import Dict, List, Optional, Set, Tuple
+from AppMap.AppWidgets.AppConstants import calcMarker, posMarker
+from AppMap.AppWidgets.AppConstants import ROAD_DRAW_ZOOM, NWBLineSettings, NWBLine
 
 # Canvas tags and markers
 NWBLine = "NWBLine"
@@ -53,21 +55,7 @@ class MapOverlayRenderer:
         marker_text: str = "new mark",
         **styling_kwargs
     ) -> None:
-        """Add marker with appropriate styling.
-        
-        Handles:
-        - Position marker styling (user-added)
-        - Calculated marker styling (system-generated)
-        - Legend updates
-        
-        Args:
-            coords: Tuple of (latitude, longitude)
-            direction: Optional direction in degrees (0-360)
-            marker_text: Text label for the marker
-            **styling_kwargs: Additional styling parameters
-        """
-        from AppMap.AppWidgets.AppConstants import calcMarker, posMarker
-        
+        """Add marker with appropriate styling."""    
         self.adding_marker = True
         self._delete_position(marker_text)
         
@@ -122,7 +110,6 @@ class MapOverlayRenderer:
         Args:
             zoom_level: Current map zoom level (integer)
         """
-        from AppMap.AppWidgets.AppConstants import ROAD_DRAW_ZOOM, NWBLineSettings, NWBLine
         
         if zoom_level >= ROAD_DRAW_ZOOM:
             line_width = max(1, zoom_level - 16)

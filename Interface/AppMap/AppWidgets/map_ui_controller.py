@@ -1,9 +1,3 @@
-"""
-MapUIController - Manages UI components and layout.
-
-Responsibility: Creating and managing all UI components (buttons, frames, menus).
-"""
-
 import customtkinter
 from typing import Callable, Optional, Tuple
 
@@ -113,13 +107,6 @@ class MapUIController:
     def layout_ui(self, map_widget) -> None:
         """Layout all UI components on the parent frame.
         
-        Organizes the spatial arrangement of:
-        - Title label (row 0)
-        - Map widget (row 1, spans columns)
-        - Control frames (row 2)
-        
-        Args:
-            map_widget: The map widget to layout
         """
         # Title label
         if self.title_label:
@@ -147,34 +134,21 @@ class MapUIController:
                 row=2, column=1, columnspan=2, sticky="nwse",
                 padx=10, pady=10
             )
-    
-    # ────────────────────────────────────────────────────────────────
-    # Component accessors
-    # ────────────────────────────────────────────────────────────────
-    
+
     def set_reset_button_command(self, command: Callable) -> None:
         """Set the reset button command.
-        
-        Args:
-            command: Callable to execute on button press
         """
         if self.reset_button:
             self.reset_button.configure(command=command)
     
     def set_map_option_selection(self, option: str) -> None:
         """Set the current map option selection.
-        
-        Args:
-            option: Map option name to select
         """
         if self.map_option_menu:
             self.map_option_menu.set(option)
     
     def get_map_option_selection(self) -> Optional[str]:
         """Get the current map option selection.
-        
-        Returns:
-            Current map option or None
         """
         if self.map_option_menu:
             return self.map_option_menu.get()
@@ -182,9 +156,6 @@ class MapUIController:
     
     def get_test_mode(self) -> str:
         """Get the current test mode value.
-        
-        Returns:
-            Test mode string value ("0" or "1")
         """
         if self.test_mode_var:
             return self.test_mode_var.get()
@@ -192,64 +163,6 @@ class MapUIController:
     
     def is_test_mode_enabled(self) -> bool:
         """Check if test mode is enabled.
-        
-        Returns:
-            True if test mode is on, False otherwise
         """
         return self.get_test_mode() == "1"
-    
-    # ────────────────────────────────────────────────────────────────
-    # State management
-    # ────────────────────────────────────────────────────────────────
-    
-    def enable_controls(self) -> None:
-        """Enable all UI controls."""
-        self._set_controls_state(state="normal")
-    
-    def disable_controls(self) -> None:
-        """Disable all UI controls (e.g., during processing)."""
-        self._set_controls_state(state="disabled")
-    
-    def _set_controls_state(self, state: str) -> None:
-        """Set state of all interactive controls.
-        
-        Args:
-            state: Widget state ("normal" or "disabled")
-        """
-        if self.map_option_menu:
-            self.map_option_menu.configure(state=state)
-        
-        if self.reset_button:
-            self.reset_button.configure(state=state)
-        
-        # Disable buttons in position frame
-        if self.position_buttons_frame:
-            for child in self.position_buttons_frame.winfo_children():
-                if isinstance(child, customtkinter.CTkButton):
-                    child.configure(state=state)
-    
-    # ────────────────────────────────────────────────────────────────
-    # Utility methods
-    # ────────────────────────────────────────────────────────────────
-    
-    def get_ui_config(self) -> dict:
-        """Get current UI configuration.
-        
-        Returns:
-            Dictionary with current UI state
-        """
-        return {
-            "map_selection": self.get_map_option_selection(),
-            "test_mode": self.is_test_mode_enabled(),
-            "controls_enabled": True  # Could track actual state
-        }
-    
-    def show_message(self, message: str, title: str = "Info") -> None:
-        """Show an info message to the user.
-        
-        Args:
-            message: Message text
-            title: Window title (not used in current implementation)
-        """
-        print(f"{title}: {message}")
-        # Could be extended to show actual message boxes
+   

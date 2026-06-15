@@ -396,20 +396,3 @@ class AppFrameMap(customtkinter.CTkFrame):
         """
         self._on_change_map(new_map)
     
-    # ────────────────────────────────────────────────────────────────
-    # Utility methods for testing
-    # ────────────────────────────────────────────────────────────────
-    
-    def get_state_info(self) -> Dict:
-        """Get current state information (useful for testing).
-        
-        Returns:
-            Dictionary with current state
-        """
-        return {
-            "has_markers": self.marker_manager.has_markers(),
-            "marker_count": len(self.marker_manager.markers),
-            "road_stats": self.road_manager.get_road_stats(),
-            "ui_config": self.ui_controller.get_ui_config(),
-            "overlay_legend_items": len(self.overlay_renderer.legend_to_draw)
-        }

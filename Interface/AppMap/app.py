@@ -1,4 +1,5 @@
 import copy
+from AppMap.TextInterpreter import InputInterpreter
 from customtkinter.windows.widgets import appearance_mode
 import customtkinter
 
@@ -14,6 +15,12 @@ HEIGHT = 720
 MAXWIDTH = 1920
 MAXHEIGHT = 1080
 APPNAME = "Kegelrobots besturingsapp"
+NAMEFIELD = 1 -1
+VALUEFIELD = 2 -1
+STATUSFIELD = 3-1
+LATFIELD = 3-1
+LONGFIELD = 4-1
+DIRECTIONFIELD = 5-1
 
 
 class App(customtkinter.CTk):
@@ -48,38 +55,58 @@ class App(customtkinter.CTk):
         self.app_frame_robots = AppFrameRobots(self)
         self.app_frame_robots.grid(row=0, column=0, rowspan=3, padx=(10,0), pady=(0,10), sticky="nswe")
 
-        self.map_viewer = AppFrameMap(self, sendCallback=self.send_coordinates_to_robots, resetCallback=self.reset_interface, getRobotNames=self.app_frame_robots.get_robot_names)
-        self.map_viewer.grid(row=0, column=1, rowspan=3, padx=10, pady=(0,10), sticky="nswe")
+        #self.map_viewer = AppFrameMap(self, sendCallback=self._send_coordinates_to_robots, resetCallback=self.reset_interface, getRobotNames=self.app_frame_robots.get_robot_names)
 
+        self.map_viewer = AppFrameMap(self,send_callback=self._send_coordinates_to_robots,reset_callback=self.reset_interface,get_robot_names_callback=self.app_frame_robots.get_robot_names)
+
+            
+        self.map_viewer.grid(row=0, column=1, rowspan=3, padx=10, pady=(0,10), sticky="nswe")
+        self.input_interpreter = InputInterpreter(self.callback_handler)
+
+
+    def callback_handler(self, callback, *args, **kwargs):
+        """Handles callbacks from child widgets."""
+        if callback == "send_coordinates":
+            self._send_coordinates_to_robots(*args, **kwargs)
+        elif callback == "reset_interface":
+            self.reset_interface()
+        elif callback == "get_robot_names":
+            return self.app_frame_robots.get_robot_names()
 
 
 
     def start_GUI(self):
         self.mainloop()
-
-    # def GetRobotNames(self):
-    #     robotNames = self.robotViewer.GetRobotNames()
-    #     print("Robotnamen zijn: ", robotNames)
     
     def make_new_marker(self, markerToBePlaced):
-        print("makeNewMarker van app")
-        coords = [markerToBePlaced[1], markerToBePlaced[2]]
-        name = markerToBePlaced[0]
-        direction = markerToBePlaced[3]
-        self.map_viewer.add_marker(coords=coords, direction=direction, markerText=name)
+        ###markerToBePlaced is een lijst met de naam van de robot, valuefield, de lat, lon en de richting van de robot
+        print("makeNewMarker van app, MESSAGE = ", markerToBePlaced)
+        #self.map_viewer.add_marker(coords=[markerToBePlaced[LATFIELD], markerToBePlaced[LONGFIELD]]
+        #                           ,direction=markerToBePlaced[DIRECTIONFIELD], markerText=markerToBePlaced[NAMEFIELD])
+        self.map_viewer._on_add_marker(coords=[markerToBePlaced[LATFIELD], markerToBePlaced[LONGFIELD]], name=markerToBePlaced[NAMEFIELD])
+    
 
     def message_handler(self, client, userdata, msg):
         decodedMessage = msg.payload.decode()
         topic = msg.topic
         print(f"Bericht ontvangen op '{topic}': {decodedMessage}")
-        markterToBePlaced = self.app_frame_robots.parse_message(decodedMessage=decodedMessage,topic=topic)
-        print("marker to be placed if: " f"{markterToBePlaced}")
-        if markterToBePlaced:
-            print("marker to be placed is goed ")
-            self.make_new_marker(markterToBePlaced)
+        msg_to_return = self.input_interpreter.parse_message(decodedMessage=decodedMessage,topic=topic)
+        print("message to be returned if: " f"{msg_to_return}")
+        if msg_to_return:
+            print("message to be returned is goed ")
+            self._after_message_handling(msg_to_return)
 
+    def _after_message_handling(self, msg_to_return):
+        print("MESSSSSSSSSSSAGE AFTER HANDLING = ", msg_to_return)
+        if  "Position" in msg_to_return:
+            self.make_new_marker(msg_to_return)
+            self.app_frame_robots.update_robot_status(msg_to_return)
+        elif "Status" in msg_to_return:
+            self.app_frame_robots.update_robot_status(msg_to_return)
+        else:
+            print("No valid message to process after handling.") 
 
-    def send_coordinates_to_robots(self, coordsDict):
+    def _send_coordinates_to_robots(self, coordsDict):
         msgField = "MoveToPosition"
         robotNames = self.app_frame_robots.get_robot_names()
         robotsToSendTo = [key for key in robotNames if key not in coordsDict]

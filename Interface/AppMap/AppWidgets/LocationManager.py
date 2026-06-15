@@ -22,13 +22,14 @@ class LocationManager:
     def create_incident_frame(self, master, location_dict, go_to_callback):
         """Create and display incident location frame."""
         if self.incident_frame is not None:
+            print(" RETURNING FRMO CREATE INCIDENT")
             return self.incident_frame
         
         road = location_dict.get("road", "Unknown")
         city = location_dict.get("city", "Unknown")
         state = location_dict.get("state", "Unknown")
         location_text = f"{road}, {city}, {state}"
-        
+        print("LOCATION TEXT = ", location_text)
         self.incident_frame = UIBuilder.create_incident_location_frame(
             master, location_text, go_to_callback
         )

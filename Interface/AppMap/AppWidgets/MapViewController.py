@@ -1,3 +1,5 @@
+
+
 class MapViewController:
     """Manages map pan, zoom, and viewport operations."""
     
@@ -21,12 +23,12 @@ class MapViewController:
             )
     
     def enforce_zoom(self):
-        """Enforce maximum zoom level."""
+        """Enforce maximum zoom level to prevent zooming in too far."""
         if self.map_widget.zoom > self.max_zoom:
             self.map_widget.set_zoom(self.max_zoom)
     
     def get_viewport_bbox(self):
-        """Get bounding box of current viewport."""
+        """Get bounding box of current viewport, used for road data fetching."""
         w = self.map_widget.winfo_width()
         h = self.map_widget.winfo_height()
         
@@ -37,7 +39,7 @@ class MapViewController:
             lat_nw, lon_nw = self.map_widget.convert_canvas_coords_to_decimal_coords(0, 0)
             lat_se, lon_se = self.map_widget.convert_canvas_coords_to_decimal_coords(w, h)
         except Exception as e:
-            print("EXCEPTION: ", e)
+            print("EXCEPTION from mapviewcontroller: ", e)
             return None
         
         return (min(lat_nw, lat_se), min(lon_nw, lon_se),

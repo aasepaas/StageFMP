@@ -160,8 +160,11 @@ class CanvasRenderer:
     
     def clear_canvas_tag(self, tag):
         """Clear all items with given tag/name."""
-        self.canvas.delete(tag)
-    
+        try:
+            self.canvas.delete(tag)
+        except Exception as e:
+            print("EXCEPTION while clearing canvas tag: ", e)
+
     def _pixels_to_meters(self, pixels):
         """Convert pixel distance to meters based on zoom and latitude."""
         zoom = self.map_widget.zoom

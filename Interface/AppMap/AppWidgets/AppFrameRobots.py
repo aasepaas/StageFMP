@@ -79,7 +79,7 @@ class AppFrameRobots(customtkinter.CTkFrame):
                     return newMarker
         #pdate robot status 
         elif (valueField == "Status"):
-            self._rarse_status_sessage(name, value)
+            self._rarse_status_messagee(name, value)
            
         
         return newMarker

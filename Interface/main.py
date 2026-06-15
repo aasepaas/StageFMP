@@ -16,8 +16,8 @@ keyfile  = CERT_DIR / "GUI-Na-CRL18-05-key.pem"
 
 if __name__ == "__main__":
 
-    success = run_all_tests()
-    sys.exit(0 if success else 1)
+    # success = run_all_tests()
+    # sys.exit(0 if success else 1)
 
     def on_message(client, userdata, msg):
        bericht = msg.payload.decode()
@@ -31,7 +31,7 @@ if __name__ == "__main__":
     MQTTClient1.connectToBroker("http://100.79.123.44:8080/ejbca/publicweb/webdist/certdist?cmd=crl&issuer=CN%3DSmartConeSubCA%2CO%3DFMP%2CC%3DNL")
 
     sleep(0.1)
-    while not MQTTClient1.get_connection_status():
+    while not MQTTClient1.connectionStatus():
         pass
 
 
@@ -46,6 +46,9 @@ if __name__ == "__main__":
     MQTTClient1.subscribe_to_topic("ajdajsdjaskd/#", qos=1)
 
     MQTTClient1.subscribe_to_topic("Robots/#", qos=1)
+
+    sleep(0.5)
+    MQTTClient1.get_subscriptions()
 
 
 

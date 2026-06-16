@@ -1,0 +1,302 @@
+# This file is generated. Do not edit.
+# The configs are results of online config changes from UI/API/CLI.
+# To persist configs in this file, copy the content to etc/base.hocon.
+actions {
+  http {}
+}
+authorization {
+  cache {
+    enable = true
+    excludes = []
+    max_size = 32
+    ttl = "1m"
+  }
+  deny_action = ignore
+  no_match = allow
+  node_cache {
+    cache_ttl = "1m"
+    enable = false
+    max_count = 1000000
+    max_memory = "100MB"
+  }
+  sources = [
+    {
+      enable = true
+      path = "data/authz/acl.conf"
+      type = file
+    }
+  ]
+}
+connectors {
+  http {}
+}
+flapping_detect {
+  ban_time = "5m"
+  enable = true
+  max_count = 15
+  window_time = "1m"
+}
+listeners {
+  ssl {
+    default {
+      acceptors = 16
+      access_rules = [
+        "allow all"
+      ]
+      bind = 8883
+      enable = true
+      enable_authn = true
+      max_connections = 900
+      messages_burst = "40/s"
+      messages_rate = "20/s"
+      mountpoint = ""
+      parse_unit = frame
+      proxy_protocol = false
+      proxy_protocol_timeout = "3s"
+      ssl_options {
+        cacertfile = "/opt/emqx/etc/certs/ca_chain.pem"
+        certfile = "/opt/emqx/etc/certs/fullchain18-5.pem"
+        ciphers = [
+          "ECDHE-ECDSA-AES256-GCM-SHA384",
+          "ECDHE-ECDSA-AES128-GCM-SHA256",
+          TLS_AES_256_GCM_SHA384,
+          TLS_CHACHA20_POLY1305_SHA256
+        ]
+        client_renegotiation = true
+        depth = 10
+        enable_crl_check = true
+        fail_if_no_peer_cert = true
+        gc_after_handshake = false
+        handshake_timeout = "15s"
+        hibernate_after = "5s"
+        honor_cipher_order = true
+        keyfile = "/opt/emqx/etc/certs/mqttserver18-05.pem"
+        log_level = notice
+        ocsp {
+          enable_ocsp_stapling = false
+          refresh_http_timeout = "15s"
+          refresh_interval = "5m"
+        }
+        reuse_sessions = true
+        secure_renegotiate = true
+        session_tickets = disabled
+        verify = verify_peer
+        versions = [
+          "tlsv1.2",
+          "tlsv1.3"
+        ]
+      }
+      tcp_options {
+        active_n = 100
+        backlog = 1024
+        buffer = "4KB"
+        high_watermark = "1MB"
+        keepalive = none
+        nodelay = true
+        nolinger = false
+        reuseaddr = true
+        send_timeout = "15s"
+        send_timeout_close = true
+      }
+      zone = default
+    }
+  }
+  tcp {
+    default {
+      acceptors = 16
+      access_rules = [
+        "allow all"
+      ]
+      bind = 1883
+      enable = false
+      enable_authn = true
+      max_connections = infinity
+      mountpoint = ""
+      parse_unit = frame
+      proxy_protocol = false
+      proxy_protocol_timeout = "3s"
+      tcp_options {
+        active_n = 100
+        backlog = 1024
+        buffer = "4KB"
+        high_watermark = "1MB"
+        keepalive = none
+        nodelay = true
+        nolinger = false
+        reuseaddr = true
+        send_timeout = "15s"
+        send_timeout_close = true
+      }
+      zone = default
+    }
+  }
+  ws {
+    default {
+      acceptors = 16
+      access_rules = [
+        "allow all"
+      ]
+      bind = 8083
+      enable = false
+      enable_authn = true
+      max_connections = infinity
+      mountpoint = ""
+      proxy_protocol = false
+      proxy_protocol_timeout = "3s"
+      tcp_options {
+        active_n = 100
+        backlog = 1024
+        buffer = "4KB"
+        high_watermark = "1MB"
+        keepalive = none
+        nodelay = true
+        nolinger = false
+        reuseaddr = true
+        send_timeout = "15s"
+        send_timeout_close = true
+      }
+      websocket {
+        allow_origin_absence = true
+        check_origin_enable = false
+        check_origins = "http://localhost:18083, http://127.0.0.1:18083"
+        compress = false
+        deflate_opts {
+          client_context_takeover = takeover
+          client_max_window_bits = 15
+          mem_level = 8
+          server_context_takeover = takeover
+          server_max_window_bits = 15
+          strategy = default
+        }
+        fail_if_no_subprotocol = true
+        idle_timeout = "7200s"
+        max_frame_size = infinity
+        mqtt_path = "/mqtt"
+        mqtt_piggyback = multiple
+        proxy_address_header = "x-forwarded-for"
+        proxy_port_header = "x-forwarded-port"
+        supported_subprotocols = "mqtt, mqtt-v3, mqtt-v3.1.1, mqtt-v5"
+        validate_utf8 = true
+      }
+      zone = default
+    }
+  }
+  wss {
+    default {
+      acceptors = 16
+      access_rules = [
+        "allow all"
+      ]
+      bind = 8084
+      enable = false
+      enable_authn = true
+      max_connections = infinity
+      mountpoint = ""
+      proxy_protocol = false
+      proxy_protocol_timeout = "3s"
+      ssl_options {
+        cacertfile = "${EMQX_ETC_DIR}/certs/cacert.pem"
+        certfile = "${EMQX_ETC_DIR}/certs/cert.pem"
+        ciphers = []
+        client_renegotiation = true
+        depth = 10
+        fail_if_no_peer_cert = false
+        handshake_timeout = "15s"
+        hibernate_after = "5s"
+        honor_cipher_order = true
+        keyfile = "${EMQX_ETC_DIR}/certs/key.pem"
+        log_level = notice
+        reuse_sessions = true
+        secure_renegotiate = true
+        session_tickets = disabled
+        verify = verify_none
+        versions = [
+          "tlsv1.3",
+          "tlsv1.2"
+        ]
+      }
+      tcp_options {
+        active_n = 100
+        backlog = 1024
+        buffer = "4KB"
+        high_watermark = "1MB"
+        keepalive = none
+        nodelay = true
+        nolinger = false
+        reuseaddr = true
+        send_timeout = "15s"
+        send_timeout_close = true
+      }
+      websocket {
+        allow_origin_absence = true
+        check_origin_enable = false
+        check_origins = "http://localhost:18083, http://127.0.0.1:18083"
+        compress = false
+        deflate_opts {
+          client_context_takeover = takeover
+          client_max_window_bits = 15
+          mem_level = 8
+          server_context_takeover = takeover
+          server_max_window_bits = 15
+          strategy = default
+        }
+        fail_if_no_subprotocol = true
+        idle_timeout = "7200s"
+        max_frame_size = infinity
+        mqtt_path = "/mqtt"
+        mqtt_piggyback = multiple
+        proxy_address_header = "x-forwarded-for"
+        proxy_port_header = "x-forwarded-port"
+        supported_subprotocols = "mqtt, mqtt-v3, mqtt-v3.1.1, mqtt-v5"
+        validate_utf8 = true
+      }
+      zone = default
+    }
+  }
+}
+log {
+  console {}
+  file {}
+}
+mqtt {
+  await_rel_timeout = "300s"
+  client_attrs_init = []
+  clientid_override = disabled
+  exclusive_subscription = false
+  idle_timeout = "15s"
+  ignore_loop_deliver = false
+  keepalive_check_interval = "30s"
+  keepalive_multiplier = 1.5
+  max_awaiting_rel = 100
+  max_clientid_len = 65535
+  max_inflight = 32
+  max_mqueue_len = 1000
+  max_packet_size = "1024B"
+  max_qos_allowed = 2
+  max_subscriptions = infinity
+  max_topic_alias = 65535
+  max_topic_levels = 128
+  message_expiry_interval = infinity
+  mqueue_default_priority = lowest
+  mqueue_priorities = disabled
+  mqueue_store_qos0 = true
+  peer_cert_as_clientid = cn
+  peer_cert_as_username = cn
+  response_information = null
+  retain_available = true
+  retry_interval = infinity
+  server_keepalive = disabled
+  session_expiry_interval = "2h"
+  shared_subscription = true
+  shared_subscription_initial_sticky_pick = random
+  shared_subscription_strategy = round_robin
+  strict_mode = true
+  upgrade_qos = false
+  use_username_as_clientid = false
+  wildcard_subscription = true
+}
+rule_engine {
+  ignore_sys_message = true
+  jq_function_default_timeout = "10s"
+  rules {}
+}

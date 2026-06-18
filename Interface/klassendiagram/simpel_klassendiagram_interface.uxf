@@ -1,0 +1,790 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<diagram program="umlet" version="15.1">
+  <zoom_level>8</zoom_level>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>880</x>
+      <y>256</y>
+      <w>88</w>
+      <h>24</h>
+    </coordinates>
+    <panel_attributes>App
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>1032</x>
+      <y>248</y>
+      <w>104</w>
+      <h>32</h>
+    </coordinates>
+    <panel_attributes>InputInterpreter
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>960</x>
+      <y>392</y>
+      <w>120</w>
+      <h>32</h>
+    </coordinates>
+    <panel_attributes>AppFrameRobots
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>1104</x>
+      <y>336</y>
+      <w>168</w>
+      <h>32</h>
+    </coordinates>
+    <panel_attributes>AppScrolFrameRobots</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>1152</x>
+      <y>424</y>
+      <w>80</w>
+      <h>24</h>
+    </coordinates>
+    <panel_attributes>Robots
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>896</x>
+      <y>320</y>
+      <w>184</w>
+      <h>88</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;-
+Beheren online robots overzicht</panel_attributes>
+    <additional_attributes>160.0;90.0;160.0;20.0;10.0;20.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>960</x>
+      <y>256</y>
+      <w>88</w>
+      <h>40</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;-
+Berichten
+parsen met</panel_attributes>
+    <additional_attributes>90.0;20.0;10.0;20.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1072</x>
+      <y>400</y>
+      <w>80</w>
+      <h>24</h>
+    </coordinates>
+    <panel_attributes>lt=-</panel_attributes>
+    <additional_attributes>80.0;10.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1128</x>
+      <y>360</y>
+      <w>112</w>
+      <h>64</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;-
+Online robots lijst</panel_attributes>
+    <additional_attributes>10.0;10.0;10.0;60.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1128</x>
+      <y>400</y>
+      <w>120</w>
+      <h>48</h>
+    </coordinates>
+    <panel_attributes>lt=-
+robot data bewaren
+</panel_attributes>
+    <additional_attributes>10.0;10.0;10.0;40.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>824</x>
+      <y>360</y>
+      <w>96</w>
+      <h>32</h>
+    </coordinates>
+    <panel_attributes>AppFrameMap
+
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>896</x>
+      <y>272</y>
+      <w>24</w>
+      <h>104</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;-</panel_attributes>
+    <additional_attributes>10.0;110.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>768</x>
+      <y>248</y>
+      <w>80</w>
+      <h>32</h>
+    </coordinates>
+    <panel_attributes>MQTTClient
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>472</x>
+      <y>480</y>
+      <w>112</w>
+      <h>32</h>
+    </coordinates>
+    <panel_attributes>MapEventHandler
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>480</x>
+      <y>632</y>
+      <w>96</w>
+      <h>24</h>
+    </coordinates>
+    <panel_attributes>MapUIController
+--
+- parent_frame
+- on_change_map / on_calculate / on_delete
+- on_send / on_test_toggle / on_home_robots
+- title_label, control_frame, map_option_menu
+- position_buttons_frame, test_mode_var
+--
++ layout_ui(map_widget)
++ set_reset_button_command(cmd)
++ get_test_mode() / is_test_mode_enabled()
++ set_map_option_selection(option)
++ get_map_option_selection()
+- _create_components()</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>488</x>
+      <y>584</y>
+      <w>88</w>
+      <h>24</h>
+    </coordinates>
+    <panel_attributes>PopopWindow
+--
+- master
+- afterPopupCallback: Callable
+- amountOfRobots: int
+- optionformation
+--
++ pop_up(listOfRobotNames)</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>824</x>
+      <y>256</y>
+      <w>88</w>
+      <h>64</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;-
+
+
+communicatie
+via MQTTClient</panel_attributes>
+    <additional_attributes>30.0;20.0;70.0;20.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>488</x>
+      <y>544</y>
+      <w>96</w>
+      <h>24</h>
+    </coordinates>
+    <panel_attributes>EventCallbacks
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>272</x>
+      <y>512</y>
+      <w>128</w>
+      <h>32</h>
+    </coordinates>
+    <panel_attributes>MapEventCallbacks
+&lt;&lt;interface&gt;&gt;
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>736</x>
+      <y>624</y>
+      <w>112</w>
+      <h>24</h>
+    </coordinates>
+    <panel_attributes>MapViewController
+--
+- map_widget
+- max_zoom: int
+--
++ set_tile_server(tile_type) 
++ enforce_zoom()
++ get_viewport_bbox()
++ go_to_coordinates(lat, lon, zoom)</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>848</x>
+      <y>536</y>
+      <w>112</w>
+      <h>24</h>
+    </coordinates>
+    <panel_attributes>CanvasRenderer
+--
+- map_widget
+- canvas
+--
++ draw_scale()
++ draw_legend(items, config)
++ draw_roads(polylines, tag, color, width)
++ draw_marker_arrows(marker, richting, tag)
++ clear_canvas_tag(tag)
+- _pixels_to_meters(pixels)
+- _latlon_to_canvas(lat, lon)</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>1144</x>
+      <y>624</y>
+      <w>96</w>
+      <h>24</h>
+    </coordinates>
+    <panel_attributes>MarkerManager
+--
+- map_widget
+- markers_dict
+- marker_lines
+--
++ add_marker(coords, richting, tekst)
++ delete_markers_by_name(patroon)
++ delete_all_markers()
++ get_calculated_positions()
++ get_first_marker()
++ has_markers()</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>872</x>
+      <y>624</y>
+      <w>112</w>
+      <h>24</h>
+    </coordinates>
+    <panel_attributes>RoadDataManager
+--
+- road_polylines
+- road_fetch_bbox
+- road_fetch_running
+--
++ fetch_roads_thread(bbox)
++ has_data()
++ clear_cache()
+- _parse_features(features)</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>1008</x>
+      <y>624</y>
+      <w>112</w>
+      <h>24</h>
+    </coordinates>
+    <panel_attributes>OffsetPolyManager
+--
+- offset_polyline_single
+--
+- find_nearest_polyline(lat, lon, polylines)
+- compute_offset_vector(lat, lon, polyline)
+- build_offset_polylines(lat, lon, polylines)
+- snap_to_offset_polyline(lat, lon)
+- get_offset_polyline()
+- clear()</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>672</x>
+      <y>544</y>
+      <w>104</w>
+      <h>24</h>
+    </coordinates>
+    <panel_attributes>LocationManager
+--
+- geolocator: Nominatim
+- incident_frame
+--
++ reverse_geocode(lat, lon)
++ create_incident_frame(master, locatie, cb)
++ destroy_incident_frame()</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>392</x>
+      <y>680</y>
+      <w>96</w>
+      <h>24</h>
+    </coordinates>
+    <panel_attributes>UIBuilder
+--
+--
++ create_map_widget(master)
++ create_control_frame(master, cb)
++ create_position_buttons_frame(master)
++ create_incident_location_frame(master)</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>896</x>
+      <y>480</y>
+      <w>120</w>
+      <h>24</h>
+    </coordinates>
+    <panel_attributes>MapOverlayRenderer
+--
+- map_widget
+- canvas_renderer
+- marker_manager
+- road_data_manager
+- offset_polyline_manager
+- legend_to_draw
+- adding_marker
+--
++ add_marker_with_styling(coords, richting, tekst)
++ draw_marker_arrows()
++ draw_roads(zoom)
++ draw_offset_roads(zoom)
++ draw_scale()
++ draw_legend(config)
++ redraw_all(zoom)
++ clear_markers()
++ clear_all_roads()
++ reset_legend()
++ get_legend_items()
+- _delete_position(naam)</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>744</x>
+      <y>480</y>
+      <w>104</w>
+      <h>24</h>
+    </coordinates>
+    <panel_attributes>MapRoadManager
+--
+- map_widget
+- map_view_controller
+- road_data_manager
+- reset_callback
+- road_refresh_job
+- ROAD_DRAW_ZOOM
+--
++ schedule_refresh(delay_ms)
++ refresh_roads()
++ cancel_refresh()
++ wait_for_fetch_completion(timeout_ms)
++ get_road_stats()
++ _cached_roads_valid(bbox)
++ _fetch_roads_async(bbox)</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>1120</x>
+      <y>480</y>
+      <w>152</w>
+      <h>24</h>
+    </coordinates>
+    <panel_attributes>PositionCalculatorManager
+--
+- marker_manager
+- road_data_manager
+- offset_polyline_manager
+- overlay_renderer
+--
++ calculate_and_place_positions(distance, amount, ...)
++ get_calculated_positions()
++ clear_calculated_positions()
++ validate_calculation_parameters(distance, amount)
++ get_supported_formations()
+- _calculate_by_formation()</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>640</x>
+      <y>488</y>
+      <w>24</w>
+      <h>128</h>
+    </coordinates>
+    <panel_attributes>lt=-
+</panel_attributes>
+    <additional_attributes>10.0;140.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>576</x>
+      <y>552</y>
+      <w>88</w>
+      <h>24</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;10.0;90.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>576</x>
+      <y>480</y>
+      <w>88</w>
+      <h>48</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;&lt;&lt;-
+event-
+handler voor 
+zoom etc.</panel_attributes>
+    <additional_attributes>10.0;20.0;90.0;20.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>544</x>
+      <y>592</y>
+      <w>192</w>
+      <h>88</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;&lt;&lt;-
+
+
+Visualiseren van knoppen en frames</panel_attributes>
+    <additional_attributes>40.0;70.0;130.0;70.0;130.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>480</x>
+      <y>648</y>
+      <w>24</w>
+      <h>48</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;.</panel_attributes>
+    <additional_attributes>10.0;40.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>904</x>
+      <y>448</y>
+      <w>264</w>
+      <h>48</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;&lt;&lt;-</panel_attributes>
+    <additional_attributes>310.0;40.0;310.0;10.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>880</x>
+      <y>384</y>
+      <w>48</w>
+      <h>112</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;&lt;&lt;-</panel_attributes>
+    <additional_attributes>40.0;120.0;40.0;90.0;10.0;90.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>640</x>
+      <y>384</y>
+      <w>264</w>
+      <h>128</h>
+    </coordinates>
+    <panel_attributes>lt=-</panel_attributes>
+    <additional_attributes>10.0;140.0;190.0;90.0;310.0;90.0;310.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>928</x>
+      <y>496</y>
+      <w>24</w>
+      <h>56</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;-</panel_attributes>
+    <additional_attributes>10.0;50.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>672</x>
+      <y>480</y>
+      <w>96</w>
+      <h>80</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;&lt;&lt;-
+Toevoegen
+incident locatie</panel_attributes>
+    <additional_attributes>10.0;80.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1152</x>
+      <y>496</y>
+      <w>24</w>
+      <h>104</h>
+    </coordinates>
+    <panel_attributes>lt=-
+
+</panel_attributes>
+    <additional_attributes>10.0;110.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1008</x>
+      <y>480</y>
+      <w>128</w>
+      <h>48</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;-
+toevoegen
+berekende
+markers</panel_attributes>
+    <additional_attributes>10.0;20.0;140.0;20.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>640</x>
+      <y>256</y>
+      <w>80</w>
+      <h>24</h>
+    </coordinates>
+    <panel_attributes>MQTTClient
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>712</x>
+      <y>264</y>
+      <w>72</w>
+      <h>24</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;10.0;70.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>392</x>
+      <y>488</y>
+      <w>96</w>
+      <h>64</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;60.0;60.0;60.0;60.0;10.0;100.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>432</x>
+      <y>528</y>
+      <w>72</w>
+      <h>48</h>
+    </coordinates>
+    <panel_attributes>lt=-</panel_attributes>
+    <additional_attributes>70.0;40.0;10.0;40.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1128</x>
+      <y>424</y>
+      <w>40</w>
+      <h>24</h>
+    </coordinates>
+    <panel_attributes>lt=-&gt;</panel_attributes>
+    <additional_attributes>10.0;10.0;30.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>784</x>
+      <y>448</y>
+      <w>144</w>
+      <h>48</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;40.0;10.0;10.0;160.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>776</x>
+      <y>496</y>
+      <w>64</w>
+      <h>144</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;-
+Beheren
+kaart 
+zelf </panel_attributes>
+    <additional_attributes>10.0;160.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>776</x>
+      <y>568</y>
+      <w>152</w>
+      <h>72</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;-
+Ophalen 
+en inzien 
+NWB lijnen</panel_attributes>
+    <additional_attributes>170.0;70.0;170.0;20.0;10.0;20.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>960</x>
+      <y>568</y>
+      <w>216</w>
+      <h>32</h>
+    </coordinates>
+    <panel_attributes>lt=-
+</panel_attributes>
+    <additional_attributes>10.0;20.0;250.0;20.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1056</x>
+      <y>576</y>
+      <w>88</w>
+      <h>64</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;-
+Maken 
+of inzien poly
+line</panel_attributes>
+    <additional_attributes>10.0;60.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>992</x>
+      <y>496</y>
+      <w>88</w>
+      <h>104</h>
+    </coordinates>
+    <panel_attributes>lt=-</panel_attributes>
+    <additional_attributes>90.0;110.0;90.0;70.0;10.0;70.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>960</x>
+      <y>576</y>
+      <w>80</w>
+      <h>64</h>
+    </coordinates>
+    <panel_attributes>Ophalen 
+en inzien 
+NWB lijnen</panel_attributes>
+    <additional_attributes>10.0;60.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1152</x>
+      <y>576</y>
+      <w>144</w>
+      <h>64</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;-
+Maken of inzien markers</panel_attributes>
+    <additional_attributes>10.0;60.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>568</x>
+      <y>584</y>
+      <w>96</w>
+      <h>48</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;&lt;&lt;-
+Popupwindow
+voor 
+berekeningen</panel_attributes>
+    <additional_attributes>10.0;20.0;100.0;20.0</additional_attributes>
+  </element>
+</diagram>

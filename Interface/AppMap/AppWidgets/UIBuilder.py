@@ -35,10 +35,15 @@ class UIBuilder:
     
     @staticmethod
     def create_position_buttons_frame(master, calculate_callback, delete_callback, 
-                                     send_callback, switch_test_callback):
+                                     send_callback, switch_test_callback, on_home_robots_callback):
         """Create position calculation buttons frame."""
         frame = customtkinter.CTkFrame(master)
         
+        customtkinter.CTkButton(
+            frame, text="Stuur robots terug naar weginspecteur",
+            command=on_home_robots_callback, border_color="black", border_width=2, fg_color="blue"
+        ).grid(row=1, column=2, padx=10, pady=10, sticky="nw")
+
         customtkinter.CTkButton(
             frame, text="Bereken overige posities",
             command=calculate_callback, border_color="black", border_width=2

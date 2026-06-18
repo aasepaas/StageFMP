@@ -1,3 +1,4 @@
+from ast import Call
 import customtkinter
 from typing import Callable, Optional, Tuple
 
@@ -14,7 +15,8 @@ class MapUIController:
     
     def __init__(self, parent_frame, on_change_map: Callable,
                  on_calculate: Callable, on_delete: Callable,
-                 on_send: Callable, on_test_toggle: Callable):
+                 on_send: Callable, on_test_toggle: Callable,
+                 on_home_robots: Callable):
         """Initialize UI controller.
         
         Args:
@@ -31,6 +33,7 @@ class MapUIController:
         self.on_delete = on_delete
         self.on_send = on_send
         self.on_test_toggle = on_test_toggle
+        self.on_home_robots = on_home_robots
         
         # UI components
         self.title_label: Optional[customtkinter.CTkLabel] = None
@@ -97,7 +100,8 @@ class MapUIController:
                 calculate_callback=self.on_calculate,
                 delete_callback=self.on_delete,
                 send_callback=self.on_send,
-                switch_test_callback=self.on_test_toggle
+                switch_test_callback=self.on_test_toggle,
+                on_home_robots_callback = self.on_home_robots
             )
     
     # ────────────────────────────────────────────────────────────────

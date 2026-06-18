@@ -57,7 +57,10 @@ class App(customtkinter.CTk):
 
         #self.map_viewer = AppFrameMap(self, sendCallback=self._send_coordinates_to_robots, resetCallback=self.reset_interface, getRobotNames=self.app_frame_robots.get_robot_names)
 
-        self.map_viewer = AppFrameMap(self,send_callback=self._send_coordinates_to_robots,reset_callback=self.reset_interface,get_robot_names_callback=self.app_frame_robots.get_robot_names)
+        self.map_viewer = AppFrameMap(self,send_callback=self._send_coordinates_to_robots,
+                                      reset_callback=self.reset_interface,
+                                      get_robot_names_callback=self.app_frame_robots.get_robot_names,
+                                      general_callback=self.callback_handler)
 
             
         self.map_viewer.grid(row=0, column=1, rowspan=3, padx=10, pady=(0,10), sticky="nswe")
@@ -72,6 +75,9 @@ class App(customtkinter.CTk):
             self.reset_interface()
         elif callback == "get_robot_names":
             return self.app_frame_robots.get_robot_names()
+        elif callback == "home_robots":
+            self._home_robots()
+           
 
 
 
@@ -121,7 +127,17 @@ class App(customtkinter.CTk):
                     self.MQTT_client.send_message(f"Commands/{robotsToSendTo[index]}/{msgField}", f"{coords[index][0]},{coords[index][1]}")
                     print(f"Commands/{robotsToSendTo[index]}/{msgField}", f"{coords[index][0]},{coords[index][1]}")
         except Exception as e:
-            print("Error bij sturen: ", e)
+            print("Error bij sturen posities: ", e)
+
+    def _home_robots(self):
+        robotNames = self.app_frame_robots.get_robot_names()
+        msgField = "MoveToPosition"
+        try:
+            for index in robotNames:
+                self.MQTT_client.send_message(f"Commands/{index}/{msgField}", f"home")
+                print(f"Commands/{index}/{msgField}", f"home")
+        except Exception as e:
+            print("Error bij sturen naar home: ", e) 
 
     def reset_interface(self):
         print("resetting screen")

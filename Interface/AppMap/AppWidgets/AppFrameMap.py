@@ -56,7 +56,7 @@ class AppFrameMap(customtkinter.CTkFrame):
     """
     
     def __init__(self, master, send_callback: Callable,
-                 reset_callback: Callable, get_robot_names_callback: Callable):
+                 reset_callback: Callable, get_robot_names_callback: Callable, general_callback: Callable):
         """Initialize the map frame orchestrator.
         
         Args:
@@ -71,6 +71,7 @@ class AppFrameMap(customtkinter.CTkFrame):
         self.send_callback = send_callback
         self.reset_callback = reset_callback
         self.get_robot_names_callback = get_robot_names_callback
+        self.general_callback = general_callback
         
         # Configure grid layout
         self.grid_columnconfigure(1, weight=1)
@@ -129,7 +130,8 @@ class AppFrameMap(customtkinter.CTkFrame):
             on_calculate=self._on_calculate,
             on_delete=self._on_delete,
             on_send=self._on_send,
-            on_test_toggle=self._on_test_toggle
+            on_test_toggle=self._on_test_toggle,
+            on_home_robots=self._on_home_robots
         )
         
         # Set reset button command
@@ -205,6 +207,13 @@ class AppFrameMap(customtkinter.CTkFrame):
     # ────────────────────────────────────────────────────────────────
     # Event handlers
     # ────────────────────────────────────────────────────────────────
+
+    def _on_home_robots(self) -> None:
+        if not self.marker_manager.has_markers():
+            print("No robots with positions to send home to")
+            return
+        self.general_callback("home_robots")
+
     
     def _on_add_marker(self, coords: Tuple[float, float], name: str) -> None:
         """Handle marker addition event.

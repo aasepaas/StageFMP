@@ -149,16 +149,7 @@ class MQTTClient(VirtualMQTTclient):
             print(f"Payload too large: {payload_size} bytes")
             return False
 
-        print(f"current time: {datetime.datetime.now()}")
-        result = self.MQTTClientLib.publish(topic, payload, qos=qos, retain=retain)
-
-        status = result[1]
-
-
-        if status == 0:
-            print(f"Message sent to topic '{topic}' with QoS {qos}: {payload}")
-        else:
-            print(f"Failed to send message to topic '{topic}'")
+        self.MQTTClientLib.publish(topic, payload, qos=qos, retain=retain)
 
     def SetMessageHandler(self,on_message_handler):
         self.MQTTClientLib.on_message = on_message_handler
@@ -212,7 +203,7 @@ class MQTTClient(VirtualMQTTclient):
         revoked = crl.get_revoked_certificate_by_serial_number(serial)
 
         if revoked:
-            print(f"GEBLOKKEERD: Serienummer {serial} ingetrokken op {revoked.revocation_date}!")
+            print(f"GEBLOKKEERD: Serienummer {serial} ingetrokken!")
             return False
 
         print(f"OK: Serienummer {serial} is geldig.")

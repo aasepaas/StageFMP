@@ -13,6 +13,7 @@ def run_all_tests():
     from tests.test_map_view_controller import TestMapViewController
     from tests.test_mqtt import TestMQTTClient
     from tests.test_app import TestApp
+    from tests.test_text_interpreter import TestInputInterpreter
     
     loader = unittest.TestLoader()
     suite = unittest.TestSuite()
@@ -25,7 +26,7 @@ def run_all_tests():
         TestLocationManager,
         TestMarkerManager,
         TestMapViewController,
-        TestMQTTClient,
+        TestInputInterpreter,
         TestApp
     ]
     
@@ -34,7 +35,7 @@ def run_all_tests():
     
     # Run with verbose output
     runner = unittest.TextTestRunner(verbosity=2)
-    result = runner.run(suite)
+    result = runner.run(suite)  
     
     # Print summary
     print("\n" + "="*70)

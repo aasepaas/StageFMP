@@ -1,0 +1,52 @@
+services:
+  ejbca:
+    image: keyfactor/ejbca-ce:latest
+    container_name: ejbca
+    hostname: de08b6ab8a49
+    user: "10001"
+    restart: "no"
+
+    ports:
+      - "58000:57600"
+      - "7601:7600"
+      - "8009:8009"
+      - "8080:8080"
+      - "8081:8081"
+      - "8082:8082"
+      - "8444:8443"
+
+    environment:
+      SMTP_PASSWORD: "gotmail"
+      OCSP_CHECK_SIGN_CERT_VALIDITY: "true"
+      LOG_AUDIT_TO_DB: "false"
+      SMTP_SSL_ENABLED: "true"
+      SMTP_USERNAME: "mail-client"
+      METRICS_ENABLED: "false"
+      LOG_LEVEL_APP_WS_TRANSACTIONS: "DEBUG"
+      LOG_LEVEL_APP: "INFO"
+      LOG_LEVEL_SERVER: "INFO"
+      LOG_LEVEL_SERVER_SUBSYSTEMS: "WARN"
+      LOG_STORAGE_MAX_SIZE_MB: "256"
+      APPSERVER_USE_MANAGED_ID: "false"
+      SMTP_DESTINATION: "localhost"
+      SMTP_DESTINATION_PORT: "25"
+      SMTP_TLS_ENABLED: "true"
+      ADMINWEB_ACCESS: "true"
+      OBSERVABLE_BIND: "127.0.0.1"
+      DATABASE_JDBC_URL: "jdbc:h2:/mnt/persistent/ejbcadb;DB_CLOSE_DELAY=-1;NON_KEYWORDS=VALUE"
+      DATABASE_USER: "ejbca"
+      DATABASE_PASSWORD: "ejbca"
+      ENABLE_DATABASE_SCHEMA_N_CONN_TEST: "true"
+      ENABLE_FEATURE_EIDAS: "false"
+      TLS_SETUP_ENABLED: "simple"
+      APPSERVER_DEPLOYMENT_TIMEOUT: "300"
+
+    volumes:
+      - ./ejbca-data:/mnt/persistent
+
+    working_dir: /opt/keyfactor
+
+    labels:
+      maintainer: support@keyfactor.com
+      vendor: Keyfactor
+      version: "9.3.7"

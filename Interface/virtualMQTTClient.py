@@ -2,11 +2,7 @@ from abc import ABC, abstractmethod
 
 class VirtualMQTTclient(ABC):
     @abstractmethod
-    def connectToBroker(self):
+    def subscribe_to_topic(self, topic, qos=1):
         pass
-
-    def sendToBroker(self):
-        pass
-
-    def receiveFromBroker(self):
+    def send_message(self, topic, payload, qos=1, retain=False):
         pass

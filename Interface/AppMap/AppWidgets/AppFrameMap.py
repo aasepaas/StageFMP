@@ -1,21 +1,4 @@
-﻿"""
-AppFrameMap (Refactored) - Main orchestrator for the map interface.
-
-This is the orchestrator that delegates to specialized managers instead of
-doing everything itself. This dramatically improves code quality, testability,
-and maintainability.
-
-Architecture:
-- AppFrameMap: Orchestrator (~100 lines)
-  ├── MapEventHandler: Event binding
-  ├── MapOverlayRenderer: Drawing operations
-  ├── MapRoadManager: Road management
-  ├── PositionCalculatorManager: Position calculations
-  ├── MapUIController: UI components
-  └── Other managers: Map, markers, location, etc.
-"""
-
-import customtkinter
+﻿import customtkinter
 from typing import Callable, Dict, Optional, Tuple
 
 from AppMap.AppWidgets.CanvasRenderer import CanvasRenderer
@@ -41,30 +24,15 @@ from AppMap.AppWidgets.map_ui_controller import MapUIController
 
 class AppFrameMap(customtkinter.CTkFrame):
     """
-    Orchestrates the map display and interactions.
+    Orchestrates the map display and interactions. """
     
-    This is a clean orchestrator that delegates to specialized managers.
-    Compare with original 424-line God Object - this is ~120 lines!
-    
-    Responsibilities:
-    - Coordinate between different managers
-    - Handle high-level user interactions
-    - Manage rendering loops (scale, legend)
-    - Provide clean public interface
-    
-    Everything else is delegated to specialized classes.
-    """
+
+  
     
     def __init__(self, master, send_callback: Callable,
                  reset_callback: Callable, get_robot_names_callback: Callable, general_callback: Callable):
-        """Initialize the map frame orchestrator.
+        """Initialize the map frame ."""
         
-        Args:
-            master: Parent widget
-            send_callback: Called when sending coordinates to robots
-            reset_callback: Called when resetting the interface
-            get_robot_names_callback: Called to get list of robot names
-        """
         super().__init__(master)
         
         # Store callbacks
@@ -78,10 +46,8 @@ class AppFrameMap(customtkinter.CTkFrame):
         self.grid_rowconfigure(0, weight=0)
         self.grid_rowconfigure(1, weight=14)
         self.grid_rowconfigure(2, weight=0)
-        
-        # ────────────────────────────────────────────────────────────
+ 
         # Initialize core components
-        # ────────────────────────────────────────────────────────────
         
         # Map widget and basic managers
         self.map_widget = UIBuilder.create_map_widget(self)
@@ -93,10 +59,6 @@ class AppFrameMap(customtkinter.CTkFrame):
         self.road_data_manager = RoadDataManager()
         self.offset_polyline_manager = OffsetPolylineManager()
         self.location_manager = LocationManager()
-        
-        # ────────────────────────────────────────────────────────────
-        # Initialize refactored behavior controllers
-        # ────────────────────────────────────────────────────────────
         
         # Rendering controller
         self.overlay_renderer = MapOverlayRenderer(
@@ -137,27 +99,19 @@ class AppFrameMap(customtkinter.CTkFrame):
         # Set reset button command
         self.ui_controller.set_reset_button_command(self._on_reset)
         
-        # ────────────────────────────────────────────────────────────
-        # Setup event handling
-        # ────────────────────────────────────────────────────────────
-        
+        #event handlers
         self.event_handler = MapEventHandler(
             self.map_widget,
             self._create_event_callbacks()
         )
         
-        # ────────────────────────────────────────────────────────────
         # Initialize popup window for formation selection
-        # ────────────────────────────────────────────────────────────
         
         self.popup_window = PopupWindow(
             self, self._after_popup_calculate
         )
         
-        # ────────────────────────────────────────────────────────────
         # Legend configuration
-        # ────────────────────────────────────────────────────────────
-        
         self.legend_config = {
             "NWBLine": NWBLine,
             "helpLine": helpLine,
@@ -167,9 +121,7 @@ class AppFrameMap(customtkinter.CTkFrame):
             "helpLineSettings": helpLineSettings
         }
         
-        # ────────────────────────────────────────────────────────────
         # Final setup
-        # ────────────────────────────────────────────────────────────
         
         self.ui_controller.layout_ui(self.map_widget)
         self._setup_map()
@@ -179,15 +131,11 @@ class AppFrameMap(customtkinter.CTkFrame):
         self._schedule_scale_rendering()
         self._schedule_legend_rendering()
     
-    # ────────────────────────────────────────────────────────────────
     # Event callback creation
-    # ────────────────────────────────────────────────────────────────
     
     def _create_event_callbacks(self) -> MapEventCallbacks:
         """Create event callback handlers for map events.
-        
-        Returns:
-            Object implementing MapEventCallbacks interface
+
         """
         class EventCallbacks(MapEventCallbacks):
             def __init__(self, parent):
@@ -204,9 +152,7 @@ class AppFrameMap(customtkinter.CTkFrame):
         
         return EventCallbacks(self)
     
-    # ────────────────────────────────────────────────────────────────
     # Event handlers
-    # ────────────────────────────────────────────────────────────────
 
     def _on_home_robots(self) -> None:
         if not self.marker_manager.has_markers():
@@ -217,10 +163,6 @@ class AppFrameMap(customtkinter.CTkFrame):
     
     def _on_add_marker(self, coords: Tuple[float, float], name: str) -> None:
         """Handle marker addition event.
-        
-        Args:
-            coords: Tuple of (latitude, longitude)
-            name: Name for the marker
         """
         self.overlay_renderer.add_marker_with_styling(coords=coords, marker_text=name)
         self._add_incident_location(coords)
@@ -239,9 +181,7 @@ class AppFrameMap(customtkinter.CTkFrame):
             print("Scheduled road refresh with result: ", result)
             print("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
     
-    # ────────────────────────────────────────────────────────────────
     # Control button handlers
-    # ────────────────────────────────────────────────────────────────
     
     def _on_calculate(self) -> None:
         """Handle calculate button press."""
@@ -268,11 +208,6 @@ class AppFrameMap(customtkinter.CTkFrame):
     
     def _on_send(self, robot_name=None, msg_field=None, msg=None) -> None:
         """Handle send to robots button press.
-        
-        Args:
-            robot_name: Optional specific robot name
-            msg_field: Optional message field
-            msg: Optional message content
         """
         coords_dict = self.marker_manager.get_calculated_positions()
         print(f"Sending coordinates: {coords_dict}")
@@ -285,9 +220,7 @@ class AppFrameMap(customtkinter.CTkFrame):
     
     def _on_change_map(self, new_map: str) -> None:
         """Handle map tile type change.
-        
-        Args:
-            new_map: New map tile type name
+       
         """
         self.map_view_controller.set_tile_server(new_map)
     
@@ -295,9 +228,7 @@ class AppFrameMap(customtkinter.CTkFrame):
         """Handle reset button press."""
         self.reset_callback()
     
-    # ────────────────────────────────────────────────────────────────
     # Rendering loops
-    # ────────────────────────────────────────────────────────────────
     
     def _schedule_scale_rendering(self) -> None:
         """Schedule scale bar rendering."""
@@ -315,9 +246,7 @@ class AppFrameMap(customtkinter.CTkFrame):
         else:
             self.after(200, self._schedule_legend_rendering)
     
-    # ────────────────────────────────────────────────────────────────
     # Setup methods
-    # ────────────────────────────────────────────────────────────────
     
     def _setup_map(self) -> None:
         """Initialize map with default settings."""
@@ -329,9 +258,6 @@ class AppFrameMap(customtkinter.CTkFrame):
         """Add incident location display based on first marker.
         
         Uses reverse geocoding to show address information.
-        
-        Args:
-            coords: Tuple of (latitude, longitude)
         """
         location_dict = self.location_manager.reverse_geocode(
             coords[0], coords[1]
@@ -361,9 +287,7 @@ class AppFrameMap(customtkinter.CTkFrame):
     
     def _after_popup_calculate(self, chosen_settings: Dict) -> None:
         """Callback from popup window with chosen settings.
-        
-        Args:
-            chosen_settings: Dictionary with user choices
+
         """
         try:
             amount = int(chosen_settings.get("Aantal", 1))
@@ -380,9 +304,7 @@ class AppFrameMap(customtkinter.CTkFrame):
             amount=amount, formation=formation
         )
     
-    # ────────────────────────────────────────────────────────────────
     # Public interface
-    # ────────────────────────────────────────────────────────────────
     
     def reset_frame(self) -> None:
         """Reset all UI and data to initial state."""

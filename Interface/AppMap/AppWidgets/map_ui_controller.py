@@ -5,12 +5,7 @@ from typing import Callable, Optional, Tuple
 
 class MapUIController:
     """Controls UI components and their layout.
-    
-    Handles:
-    - Creating UI components (buttons, labels, frames)
-    - Managing UI state (test mode toggle)
-    - Layout of all UI elements
-    - Callback management
+
     """
     
     def __init__(self, parent_frame, on_change_map: Callable,
@@ -19,13 +14,6 @@ class MapUIController:
                  on_home_robots: Callable):
         """Initialize UI controller.
         
-        Args:
-            parent_frame: Parent CTkFrame for UI components
-            on_change_map: Callback when map tile type changes
-            on_calculate: Callback when calculate button pressed
-            on_delete: Callback when delete button pressed
-            on_send: Callback when send button pressed
-            on_test_toggle: Callback when test mode toggled
         """
         self.parent_frame = parent_frame
         self.on_change_map = on_change_map
@@ -46,10 +34,7 @@ class MapUIController:
         # Create components
         self._create_components()
     
-    # ────────────────────────────────────────────────────────────────
-    # Component creation
-    # ────────────────────────────────────────────────────────────────
-    
+    # Component creation    
     def _create_components(self) -> None:
         """Create all UI components."""
         self._create_title_label()
@@ -104,10 +89,7 @@ class MapUIController:
                 on_home_robots_callback = self.on_home_robots
             )
     
-    # ────────────────────────────────────────────────────────────────
-    # Layout management
-    # ────────────────────────────────────────────────────────────────
-    
+    # Layout management    
     def layout_ui(self, map_widget) -> None:
         """Layout all UI components on the parent frame.
         

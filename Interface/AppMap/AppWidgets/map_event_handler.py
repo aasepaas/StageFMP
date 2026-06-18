@@ -1,9 +1,3 @@
-"""
-MapEventHandler - Handles all map interaction events (scroll, pan, clicks).
-
-Responsibility: Event binding and event callback delegation.
-"""
-
 from abc import ABC, abstractmethod
 from typing import Callable, Optional, Tuple
 
@@ -14,9 +8,7 @@ class MapEventCallbacks(ABC):
     @abstractmethod
     def on_add_marker(self, coords: Tuple[float, float]):
         """Called when user adds marker.
-        
-        Args:
-            coords: Tuple of (latitude, longitude)
+
         """
         pass
     
@@ -24,8 +16,7 @@ class MapEventCallbacks(ABC):
     def on_scroll(self, event=None):
         """Called when user scrolls (zooms).
         
-        Args:
-            event: Tkinter event object (optional)
+
         """
         pass
     
@@ -33,8 +24,7 @@ class MapEventCallbacks(ABC):
     def on_pan_end(self, event=None):
         """Called when pan ends.
         
-        Args:
-            event: Tkinter event object (optional)
+
         """
         pass
 
@@ -42,18 +32,11 @@ class MapEventCallbacks(ABC):
 class MapEventHandler:
     """Binds and delegates map interaction events.
     
-    Handles:
-    - Right-click menu (add marker)
-    - Mouse wheel (zoom/scroll)
-    - Pan/drag events
     """
     
     def __init__(self, map_widget, callbacks: MapEventCallbacks):
         """Initialize event handler.
-        
-        Args:
-            map_widget: The map widget instance
-            callbacks: Object implementing MapEventCallbacks interface
+
         """
         self.map_widget = map_widget
         self.callbacks = callbacks
@@ -61,10 +44,7 @@ class MapEventHandler:
     def bind_events(self) -> None:
         """Bind all map event handlers.
         
-        Sets up:
-        - Right-click menu for adding markers
-        - Scroll/zoom event handling
-        - Pan/drag event handling
+
         """
         # Right-click menu
         self.map_widget.add_right_click_menu_command(

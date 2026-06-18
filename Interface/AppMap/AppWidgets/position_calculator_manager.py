@@ -1,31 +1,15 @@
-"""
-PositionCalculatorManager - Manages robot position calculations.
-
-Responsibility: Calculate robot positions based on formation type and place them on map.
-"""
-
 from typing import Dict, List, Optional, Tuple
 
 
 class PositionCalculatorManager:
     """Manages robot position calculations and placement.
-    
-    Handles:
-    - Position calculations for different formations
-    - Building offset polylines
-    - Placing calculated positions on map
-    - Formation strategy dispatch
+
     """
     
     def __init__(self, marker_manager, road_data_manager,
                  offset_polyline_manager, overlay_renderer):
         """Initialize position calculator manager.
-        
-        Args:
-            marker_manager: MarkerManager for marker operations
-            road_data_manager: RoadDataManager for road data
-            offset_polyline_manager: OffsetPolylineManager for offset polylines
-            overlay_renderer: MapOverlayRenderer for placing markers
+       
         """
         self.marker_manager = marker_manager
         self.road_data_manager = road_data_manager
@@ -47,15 +31,7 @@ class PositionCalculatorManager:
         3. Calculate positions based on formation type
         4. Place calculated markers on map
         5. Draw offset roads
-        
-        Args:
-            distance: Distance between robots in meters (default: 10)
-            amount: Number of robots to calculate (default: 1)
-            mother_bot_pos: Position of mother robot (default: 1)
-            formation: Formation type (default: "Standaard 10m afstand")
-        
-        Returns:
-            True if calculation successful, False otherwise
+      
         """
         # Get first marker position
         first_marker = self.marker_manager.get_first_marker()
@@ -112,22 +88,7 @@ class PositionCalculatorManager:
         formation: str
     ) -> List[Tuple[float, float, float]]:
         """Calculate positions based on formation type.
-        
-        Different formations use different calculation strategies:
-        - CROW formation: Tight formation, specific geometry
-        - Standard formation: Linear spacing along polyline
-        
-        Args:
-            lat: Starting latitude
-            lon: Starting longitude
-            direction: Starting direction in degrees
-            offset_polyline: Polyline to calculate along
-            distance: Distance between robots
-            amount: Number of robots
-            formation: Formation type name
-        
-        Returns:
-            List of (lat, lon, direction) tuples
+     
         """
         from AppMap.AppWidgets.PositionCalculator import PositionCalculator
         
@@ -149,8 +110,6 @@ class PositionCalculatorManager:
     def get_calculated_positions(self) -> Dict:
         """Get all calculated positions currently on map.
         
-        Returns:
-            Dictionary of calculated positions indexed by marker
         """
         return self.marker_manager.get_calculated_positions()
     
@@ -164,13 +123,7 @@ class PositionCalculatorManager:
         amount: int
     ) -> Tuple[bool, Optional[str]]:
         """Validate calculation parameters.
-        
-        Args:
-            distance: Distance between robots
-            amount: Number of robots
-        
-        Returns:
-            Tuple of (is_valid, error_message)
+
         """
         if amount <= 0:
             return False, "Amount must be greater than 0"

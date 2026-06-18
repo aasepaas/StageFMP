@@ -1,30 +1,14 @@
-"""
-MapRoadManager - Manages road data fetching and refresh scheduling.
-
-Responsibility: Road data lifecycle, caching, and async fetching.
-"""
-
 import threading
 from typing import Optional, Tuple
 
 
 class MapRoadManager:
     """Manages road data fetching and refresh scheduling.
-    
-    Handles:
-    - Road data refresh scheduling
-    - Caching strategy
-    - Async fetching with threading
-    - Zoom-aware fetching
     """
     
     def __init__(self, map_widget, map_view_controller, road_data_manager, reset_callback):
         """Initialize road manager.
-        
-        Args:
-            map_widget: The map widget instance
-            map_view_controller: MapViewController for viewport info
-            road_data_manager: RoadDataManager for road data
+       
         """
         self.map_widget = map_widget
         self.map_view_controller = map_view_controller
@@ -40,11 +24,6 @@ class MapRoadManager:
     def schedule_refresh(self, delay_ms: int = 400) -> None:
         """Schedule road data refresh.
         
-        Cancels any pending refresh and schedules a new one after delay.
-        This prevents excessive fetching during continuous panning/zooming.
-        
-        Args:
-            delay_ms: Delay in milliseconds before refresh (default: 400)
         """
         result = None
         if self.road_refresh_job is not None:
@@ -94,14 +73,6 @@ class MapRoadManager:
     def _cached_roads_valid(self, current_bbox: Tuple) -> bool:
         """Check if cached roads are valid for current viewport.
         
-        Uses bbox_contains to check if previously fetched roads
-        cover the current viewport.
-        
-        Args:
-            current_bbox: Current viewport bounding box
-        
-        Returns:
-            True if cached roads are valid, False otherwise
         """
         # Check if we have cached roads
         if (self.road_data_manager.road_fetch_bbox is None or
@@ -116,11 +87,6 @@ class MapRoadManager:
     def _fetch_roads_async(self, bbox: Tuple) -> None:
         """Fetch roads asynchronously using threading.
         
-        Expands bbox by 30% to prefetch roads for pan/zoom,
-        then starts background thread to fetch roads.
-        
-        Args:
-            bbox: Bounding box (lat_min, lon_min, lat_max, lon_max)
         """
         self.road_data_manager.road_fetch_running = True
         
@@ -148,8 +114,7 @@ class MapRoadManager:
     
     def cancel_refresh(self) -> None:
         """Cancel any pending refresh.
-        
-        Useful during cleanup or mode switching.
+
         """
         if self.road_refresh_job is not None:
             self.map_widget.after_cancel(self.road_refresh_job)
@@ -157,12 +122,6 @@ class MapRoadManager:
     
     def wait_for_fetch_completion(self, timeout_ms: int = 5000) -> bool:
         """Wait for any ongoing road fetch to complete.
-        
-        Args:
-            timeout_ms: Maximum time to wait in milliseconds
-        
-        Returns:
-            True if fetch completed, False if timeout
         """
         import time
         
@@ -178,9 +137,6 @@ class MapRoadManager:
     
     def get_road_stats(self) -> dict:
         """Get current road data statistics.
-        
-        Returns:
-            Dictionary with road data info
         """
         return {
             "has_data": self.road_data_manager.has_data(),

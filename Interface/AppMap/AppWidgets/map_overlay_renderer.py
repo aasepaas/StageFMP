@@ -10,25 +10,12 @@ calcMarker = "calcMarker"
 
 class MapOverlayRenderer:
     """Renders all overlay elements on the map.
-    
-    Handles:
-    - Marker drawing and styling
-    - Road polyline drawing (cached and offset)
-    - Scale bar drawing
-    - Legend drawing
-    - Marker direction arrows
+   
     """
     
     def __init__(self, map_widget, canvas_renderer, marker_manager,
                  road_data_manager, offset_polyline_manager):
         """Initialize overlay renderer.
-        
-        Args:
-            map_widget: The map widget instance
-            canvas_renderer: CanvasRenderer for drawing operations
-            marker_manager: MarkerManager for marker operations
-            road_data_manager: RoadDataManager for road data
-            offset_polyline_manager: OffsetPolylineManager for offset polylines
         """
         self.map_widget = map_widget
         self.canvas_renderer = canvas_renderer
@@ -44,10 +31,7 @@ class MapOverlayRenderer:
         self._ROAD_TAG = "nwb_roads"
         self._OFFSET_TAG = "vlucht_strook_roads"
     
-    # ────────────────────────────────────────────────────────────────
-    # Marker operations
-    # ────────────────────────────────────────────────────────────────
-    
+    # Marker operations    
     def add_marker_with_styling(
         self,
         coords: Tuple[float, float],
@@ -83,8 +67,6 @@ class MapOverlayRenderer:
     def draw_marker_arrows(self) -> None:
         """Draw direction arrows for all markers.
         
-        Indicates the direction each marker is facing.
-        Only draws if not currently adding a new marker.
         """
         if self.adding_marker:
             return
@@ -97,10 +79,7 @@ class MapOverlayRenderer:
                     marker, direction, line_tag
                 )
     
-    # ────────────────────────────────────────────────────────────────
-    # Road drawing
-    # ────────────────────────────────────────────────────────────────
-    
+    # Road drawing    
     def draw_roads(self, zoom_level: int) -> None:
         """Draw cached road polylines based on zoom level.
         
@@ -145,9 +124,7 @@ class MapOverlayRenderer:
                 )
                 self.legend_to_draw.add(helpLine)
     
-    # ────────────────────────────────────────────────────────────────
     # Scale and legend
-    # ────────────────────────────────────────────────────────────────
     
     def draw_scale(self) -> bool:
         """Draw scale bar on the map.
@@ -170,9 +147,7 @@ class MapOverlayRenderer:
             self.legend_to_draw, legend_config
         )
     
-    # ────────────────────────────────────────────────────────────────
     # Batch operations
-    # ────────────────────────────────────────────────────────────────
     
     def redraw_all(self, zoom_level: Optional[int] = None) -> None:
         """Redraw all overlays.
@@ -189,9 +164,7 @@ class MapOverlayRenderer:
         self.draw_roads(zoom_level)
         self.draw_offset_roads(zoom_level)
     
-    # ────────────────────────────────────────────────────────────────
     # Cleanup operations
-    # ────────────────────────────────────────────────────────────────
     
     def clear_offset_roads(self) -> None:
         """Clear offset roads from canvas and data."""
@@ -223,9 +196,7 @@ class MapOverlayRenderer:
         except Exception as e:
             print("EXCEPTION while resetting legend: ", e)
     
-    # ────────────────────────────────────────────────────────────────
     # Internal helper methods
-    # ────────────────────────────────────────────────────────────────
     
     def _delete_position(self, name_to_delete: str = "calculated") -> None:
         """Delete positions by name pattern.

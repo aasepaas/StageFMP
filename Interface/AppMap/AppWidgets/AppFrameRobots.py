@@ -53,21 +53,6 @@ class AppFrameRobots(customtkinter.CTkFrame):
             self._add_robot(message[NAMEFIELD])
         self._update_values(message)
         
-    '''
-    def parse_message(self, decodedMessage, topic):
-        """parses the incoming MQTT messages and checks if they are valid, if so updates the robot values and returns if a new marker needs to be placed.""" 
-        splitTopic = topic.split(self.topicSplit)
-        markerToBePlaced = None
-        #make a new robot if its not in the current list
-        if not(splitTopic[1] in self.robotsDict):
-            self._add_robot(splitTopic[1])
-
-        markerToBePlaced =self._update_robot_value(name= splitTopic[1], valueField=splitTopic[2], value=decodedMessage)
-        print("marker to be placed in parsed message = ", markerToBePlaced)
-        print("returingning after parse message")
-        return markerToBePlaced
-        '''
-        
 
     def _add_robot(self, robotName):
         """adds a robot to the robot list and the scroll frame."""

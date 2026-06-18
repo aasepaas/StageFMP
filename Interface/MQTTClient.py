@@ -72,15 +72,7 @@ class MQTTClient(VirtualMQTTclient):
         self.connected = False
         print(f"DISCONNECTED: rc={rc}")
         if properties:
-            print(properties)
-
- 
-
-    def sendToBroker(self):
-        pass
-
-    def receiveFromBroker(self):
-        pass
+            print(properties) 
 
 
     def subscribe_to_topic(self, topic, qos=1):
@@ -95,12 +87,6 @@ class MQTTClient(VirtualMQTTclient):
         self.current_topic_num += 1
    
         self.topics_connected_to[status] = topic
-        #status = result[0]
-
-        # if status == 0:
-        #     print(f"Subscribed to '{topic}' with QoS {qos}")
-        # else:
-        #     print(f"Failed to subscribe to '{topic}'")
 
     def _on_message_callback(self, MQTTClientLib, userdata, msg):
         """The default callback for receiving messages."""

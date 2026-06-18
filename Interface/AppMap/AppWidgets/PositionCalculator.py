@@ -4,11 +4,6 @@ from AppMap.AppWidgets.FormationCalculator import (
     latlon_to_local_xy, local_xy_to_latlon
 )
 
- 
-
- 
-
-
 class PositionCalculator:
     """Calculates robot positions along polylines."""
     
